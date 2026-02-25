@@ -284,7 +284,7 @@ export default function Admin() {
           </Link>
           <button
             onClick={() => { logout(); }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-destructive hover:bg-destructive/10 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all duration-200 border border-destructive/20"
           >
             <LogOut size={16} />
             تسجيل الخروج
@@ -302,17 +302,27 @@ export default function Admin() {
             </h1>
             <p className="text-xs text-muted-foreground">مرحباً، {user?.name || "أدمن"}</p>
           </div>
-          {/* Mobile Nav */}
-          <div className="flex items-center gap-2 md:hidden">
-            {navItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => setTab(item.id)}
-                className={`p-2 rounded-xl transition-colors ${tab === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-              >
-                {item.icon}
-              </button>
-            ))}
+          {/* Mobile Nav + Logout */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:hidden">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setTab(item.id)}
+                  className={`p-2 rounded-xl transition-colors ${tab === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                >
+                  {item.icon}
+                </button>
+              ))}
+            </div>
+            {/* Logout button visible on all screen sizes */}
+            <button
+              onClick={() => { logout(); }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-destructive border border-destructive/30 hover:bg-destructive hover:text-white transition-all duration-200"
+            >
+              <LogOut size={15} />
+              <span className="hidden sm:inline">تسجيل الخروج</span>
+            </button>
           </div>
         </header>
 
