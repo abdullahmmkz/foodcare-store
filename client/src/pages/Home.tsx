@@ -1,18 +1,32 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, TrendingUp, Clock, DollarSign, Menu, LogIn, Shield } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, TrendingUp, Clock, DollarSign, LogIn, Shield, LogOut, UserCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import ProductCard, { type ProductItem } from "@/components/ProductCard";
 import QuickViewModal from "@/components/QuickViewModal";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { toast } from "sonner";
 
 type SortType = "newest" | "popular" | "cheapest";
 
 const LIMIT = 12;
 
 export default function Home() {
-  const { user, isAuthenticated } = useAuth();
+  const { user: oauthUser, isAuthenticated: oauthAuth } = useAuth();
+  const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
+
+  // Local auth
+  const { data: localUser } = trpc.localAuth.me.useQuery();
+  const localLogout = trpc.localAuth.logout.useMutation({
+    onSuccess: async () => {
+      await utils.localAuth.me.invalidate();
+      toast.success("تم تسجيل الخروج بنجاح");
+    },
+  });
+
+  const isAuthenticated = oauthAuth || !!localUser;
+  const user = oauthUser || localUser;
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedDiseaseId, setSelectedDiseaseId] = useState<number | undefined>(undefined);
@@ -145,15 +159,34 @@ export default function Home() {
                       </button>
                     </Link>
                   )}
-                  <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-sm font-bold text-primary">
-                    {user?.name?.[0] || "م"}
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary border border-primary/20">
+                      {user?.name?.[0] || "م"}
+                    </div>
+                    <span className="hidden md:block text-sm font-semibold text-foreground max-w-[100px] truncate">{user?.name}</span>
                   </div>
+                  <button
+                    onClick={() => {
+                      if (localUser) localLogout.mutate();
+                    }}
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-destructive transition-colors px-2 py-1.5 rounded-lg hover:bg-destructive/10"
+                    title="تسجيل الخروج"
+                  >
+                    <LogOut size={15} />
+                    <span className="hidden sm:inline text-xs">خروج</span>
+                  </button>
                 </>
               ) : (
-                <a href={getLoginUrl()} className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-3 py-2 rounded-xl hover:bg-primary/90 transition-colors">
-                  <LogIn size={15} />
-                  <span className="hidden sm:inline">تسجيل الدخول</span>
-                </a>
+                <div className="flex items-center gap-2">
+                  <Link href="/login" className="flex items-center gap-1.5 text-sm font-semibold text-foreground px-3 py-2 rounded-xl border border-border hover:bg-muted transition-colors">
+                    <LogIn size={15} />
+                    <span className="hidden sm:inline">دخول</span>
+                  </Link>
+                  <Link href="/register" className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-3 py-2 rounded-xl hover:bg-primary/90 transition-colors">
+                    <UserCircle size={15} />
+                    <span className="hidden sm:inline">حساب جديد</span>
+                  </Link>
+                </div>
               )}
             </div>
           </div>

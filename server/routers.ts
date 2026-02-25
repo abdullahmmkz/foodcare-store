@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
+import { SignJWT, jwtVerify } from "jose";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -9,7 +11,10 @@ import {
   getProducts, getProductById, getRelatedProducts,
   createProduct, updateProduct, deleteProduct, incrementProductClicks,
   getAllProductsAdmin,
+  createLocalUser, getLocalUserByEmail, getLocalUserById,
 } from "./db";
+
+const LOCAL_COOKIE = "fc_local_session";
 
 // Admin guard middleware
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -19,6 +24,14 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+async function signLocalToken(userId: number, role: string): Promise<string> {
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET || "local-secret-key");
+  return new SignJWT({ sub: String(userId), role })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("30d")
+    .sign(secret);
+}
+
 export const appRouter = router({
   system: systemRouter,
 
@@ -27,7 +40,72 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(LOCAL_COOKIE, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
+    }),
+  }),
+
+  // ─── Local Auth (Email/Password) ─────────────────────────────────────────
+  localAuth: router({
+    // Get current local session user
+    me: publicProcedure.query(async ({ ctx }) => {
+      const token = ctx.req.cookies?.[LOCAL_COOKIE];
+      if (!token) return null;
+      try {
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || "local-secret-key");
+        const { payload } = await jwtVerify(token, secret);
+        const userId = Number(payload.sub);
+        const user = await getLocalUserById(userId);
+        if (!user) return null;
+        return { id: user.id, name: user.name, email: user.email, role: user.role };
+      } catch {
+        return null;
+      }
+    }),
+
+    register: publicProcedure
+      .input(z.object({
+        name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
+        email: z.string().email("البريد الإلكتروني غير صحيح"),
+        password: z.string().min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const existing = await getLocalUserByEmail(input.email);
+        if (existing) {
+          throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني مستخدم بالفعل" });
+        }
+        const passwordHash = await bcrypt.hash(input.password, 12);
+        const userId = await createLocalUser({ name: input.name, email: input.email, passwordHash });
+        const token = await signLocalToken(userId, "user");
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(LOCAL_COOKIE, token, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
+        return { success: true, name: input.name, email: input.email, role: "user" };
+      }),
+
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email("البريد الإلكتروني غير صحيح"),
+        password: z.string().min(1, "كلمة المرور مطلوبة"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await getLocalUserByEmail(input.email);
+        if (!user) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
+        }
+        const valid = await bcrypt.compare(input.password, user.passwordHash);
+        if (!valid) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
+        }
+        const token = await signLocalToken(user.id, user.role);
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(LOCAL_COOKIE, token, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
+        return { success: true, name: user.name, email: user.email, role: user.role };
+      }),
+
+    logout: publicProcedure.mutation(({ ctx }) => {
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(LOCAL_COOKIE, { ...cookieOptions, maxAge: -1 });
+      return { success: true };
     }),
   }),
 
@@ -95,7 +173,6 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    // Admin procedures
     adminList: adminProcedure.query(async () => {
       return getAllProductsAdmin();
     }),

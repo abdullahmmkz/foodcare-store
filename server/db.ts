@@ -1,6 +1,6 @@
 import { and, desc, eq, ilike, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { diseases, InsertDisease, InsertProduct, InsertUser, products, users } from "../drizzle/schema";
+import { diseases, InsertDisease, InsertLocalUser, InsertProduct, InsertUser, localUsers, products, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -223,6 +223,29 @@ export async function incrementProductClicks(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.update(products).set({ clicks: sql`${products.clicks} + 1` }).where(eq(products.id, id));
+}
+
+// ─── Local Users ─────────────────────────────────────────────────────────────
+
+export async function createLocalUser(data: InsertLocalUser): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(localUsers).values(data);
+  return (result as any)[0]?.insertId ?? 0;
+}
+
+export async function getLocalUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(localUsers).where(eq(localUsers.email, email)).limit(1);
+  return result[0];
+}
+
+export async function getLocalUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(localUsers).where(eq(localUsers.id, id)).limit(1);
+  return result[0];
 }
 
 export async function getAllProductsAdmin() {
