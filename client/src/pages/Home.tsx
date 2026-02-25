@@ -109,7 +109,7 @@ export default function Home() {
                 <Leaf size={20} className="text-primary-foreground" />
               </div>
               <span className="font-black text-lg text-foreground hidden sm:block">
-                صحتي <span className="text-primary">ستور</span>
+                Food<span className="text-primary">Cure</span>
               </span>
             </Link>
 
@@ -150,11 +150,9 @@ export default function Home() {
                   </div>
                 </>
               ) : (
-                <a href={getLoginUrl()}>
-                  <button className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-3 py-2 rounded-xl hover:bg-primary/90 transition-colors">
-                    <LogIn size={15} />
-                    <span className="hidden sm:inline">دخول</span>
-                  </button>
+                <a href={getLoginUrl()} className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-3 py-2 rounded-xl hover:bg-primary/90 transition-colors">
+                  <LogIn size={15} />
+                  <span className="hidden sm:inline">تسجيل الدخول</span>
                 </a>
               )}
             </div>
@@ -172,9 +170,7 @@ export default function Home() {
           <h1 className="text-2xl sm:text-3xl font-black text-foreground mb-2">
             منتجات صحية مختارة بعناية
           </h1>
-          <p className="text-muted-foreground text-sm max-w-md mx-auto">
-            اكتشف أفضل المكملات الغذائية والمنتجات الصحية المصنفة حسب احتياجك
-          </p>
+
         </div>
       </div>
 

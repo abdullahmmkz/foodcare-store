@@ -249,7 +249,7 @@ export default function Admin() {
               <Leaf size={20} className="text-primary-foreground" />
             </div>
             <div>
-              <div className="font-black text-sm text-foreground">صحتي ستور</div>
+              <div className="font-black text-sm text-foreground">Food<span className="text-primary">Cure</span></div>
               <div className="text-xs text-muted-foreground">لوحة الأدمن</div>
             </div>
           </div>
