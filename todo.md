@@ -1,0 +1,44 @@
+# Health Affiliate Store - TODO
+
+## Database & Backend
+- [x] إضافة جدول diseases (الأمراض/التصنيفات)
+- [x] إضافة جدول products (المنتجات)
+- [x] تشغيل db:push لتطبيق Schema
+- [x] API: جلب الأمراض (public)
+- [x] API: جلب المنتجات مع فلترة وبحث وترتيب + Pagination
+- [x] API: تتبع النقرات (increment clicks)
+- [x] API: إدارة الأمراض (admin CRUD)
+- [x] API: إدارة المنتجات (admin CRUD)
+- [x] إضافة بيانات تجريبية (seed data)
+
+## Frontend - الصفحة الرئيسية
+- [x] تصميم Header أنيق مع لوقو وشريط بحث وزر تسجيل دخول
+- [x] شريط تصنيفات أفقي قابل للتمرير (Scrollable Categories)
+- [x] Live Search في أسماء المنتجات والتصنيفات
+- [x] فلترة فورية بدون reload
+- [x] Grid عرض المنتجات (صورة، اسم، تاج المرض، زر اشتر الآن)
+- [x] Infinite Scroll بدون pagination
+- [x] زر "اشتر الآن" يفتح الرابط في تبويب جديد
+- [x] تتبع النقرات عند الضغط على زر الشراء
+
+## Frontend - Quick View & Related
+- [x] Quick View Popup عند الضغط على المنتج
+- [x] عرض منتجات مشابهة (Related Products)
+- [x] فلاتر إضافية: الأكثر مبيعاً، الأحدث، الأرخص
+
+## Admin Panel
+- [x] صفحة تسجيل دخول الأدمن
+- [x] إدارة الأمراض: إضافة، تعديل، حذف
+- [x] إدارة المنتجات: إضافة (اسم، صورة، رابط، تصنيف)، تعديل، حذف
+- [x] عرض إحصائيات النقرات لكل منتج
+
+## Design & Responsive
+- [x] تصميم أنيق elegant مع لون أخضر صحي
+- [x] Responsive متوافق مع الجوال
+- [x] Grid عمودين على الجوال
+- [x] Sticky Header
+- [x] تصنيفات Scroll أفقي على الجوال
+
+## Testing
+- [x] اختبار vitest للـ API
+- [x] التحقق من جميع الميزات
