@@ -48,7 +48,7 @@ export default function Login() {
               Food<span className="text-primary">Cure</span>
             </span>
           </Link>
-          <p className="text-muted-foreground text-sm mt-2">منتجات صحية مختارة بعناية</p>
+          <p className="text-muted-foreground text-sm mt-2">متجر صحة افليت</p>
         </div>
 
         {/* Card */}

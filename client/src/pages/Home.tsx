@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, TrendingUp, Clock, DollarSign, LogIn, Shield, LogOut, UserCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
 import ProductCard, { type ProductItem } from "@/components/ProductCard";
 import QuickViewModal from "@/components/QuickViewModal";
 import { Link, useLocation } from "wouter";
@@ -12,11 +11,10 @@ type SortType = "newest" | "popular" | "cheapest";
 const LIMIT = 12;
 
 export default function Home() {
-  const { user: oauthUser, isAuthenticated: oauthAuth } = useAuth();
   const [, navigate] = useLocation();
   const utils = trpc.useUtils();
 
-  // Local auth
+  // Local auth only
   const { data: localUser } = trpc.localAuth.me.useQuery();
   const localLogout = trpc.localAuth.logout.useMutation({
     onSuccess: async () => {
@@ -25,8 +23,8 @@ export default function Home() {
     },
   });
 
-  const isAuthenticated = oauthAuth || !!localUser;
-  const user = oauthUser || localUser;
+  const isAuthenticated = !!localUser;
+  const user = localUser;
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedDiseaseId, setSelectedDiseaseId] = useState<number | undefined>(undefined);
@@ -166,9 +164,7 @@ export default function Home() {
                     <span className="hidden md:block text-sm font-semibold text-foreground max-w-[100px] truncate">{user?.name}</span>
                   </div>
                   <button
-                    onClick={() => {
-                      if (localUser) localLogout.mutate();
-                    }}
+                    onClick={() => localLogout.mutate()}
                     className="flex items-center gap-1 text-sm text-muted-foreground hover:text-destructive transition-colors px-2 py-1.5 rounded-lg hover:bg-destructive/10"
                     title="تسجيل الخروج"
                   >
