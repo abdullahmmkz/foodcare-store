@@ -12,6 +12,7 @@ import {
   createProduct, updateProduct, deleteProduct, incrementProductClicks,
   getAllProductsAdmin,
   createLocalUser, getLocalUserByEmail, getLocalUserById,
+  getHealthProfile, upsertHealthProfile,
 } from "./db";
 import { invokeLLM } from "./_core/llm";
 import axios from "axios";
@@ -216,6 +217,33 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+  // ─── Health Profile ──────────────────────────────────────────────────────────
+  healthProfile: router({
+    get: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return getHealthProfile(input.userId);
+      }),
+
+    save: publicProcedure
+      .input(z.object({
+        userId: z.number(),
+        age: z.number().min(1).max(120).optional(),
+        weight: z.number().min(20).max(300).optional(),
+        height: z.number().min(100).max(250).optional(),
+        gender: z.enum(["male", "female"]).optional(),
+        diseases: z.string().optional(), // JSON array
+        goal: z.enum(["weight_loss", "blood_sugar", "blood_pressure", "cholesterol", "general_health"]).optional(),
+        activityLevel: z.enum(["sedentary", "light", "moderate", "active"]).optional(),
+        allergies: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { userId, ...data } = input;
+        await upsertHealthProfile(userId, data);
+        return { success: true };
+      }),
+  }),
+
   // ─── ChatBot ─────────────────────────────────────────────────────────────
   chatbot: router({
     chat: publicProcedure
@@ -224,13 +252,22 @@ export const appRouter = router({
           role: z.enum(["user", "assistant"]),
           content: z.string(),
         })),
-        // Current step in the guided flow
         step: z.enum(["greeting", "condition", "details", "plan", "products"]).default("greeting"),
-        // Collected user data
         condition: z.string().optional(),
         age: z.string().optional(),
         weight: z.string().optional(),
         goal: z.string().optional(),
+        // Health profile from DB (pre-filled)
+        healthProfile: z.object({
+          age: z.number().nullable().optional(),
+          weight: z.number().nullable().optional(),
+          height: z.number().nullable().optional(),
+          gender: z.string().nullable().optional(),
+          diseases: z.string().nullable().optional(),
+          goal: z.string().nullable().optional(),
+          activityLevel: z.string().nullable().optional(),
+          allergies: z.string().nullable().optional(),
+        }).optional(),
       }))
       .mutation(async ({ input }) => {
         // Fetch all products from the store to use as context
@@ -268,17 +305,35 @@ export const appRouter = router({
           }
         }
 
+        // Build health profile context if available
+        let healthProfileContext = "";
+        if (input.healthProfile) {
+          const hp = input.healthProfile;
+          const diseases = hp.diseases ? JSON.parse(hp.diseases) : [];
+          healthProfileContext = `
+معلومات المستخدم (مسجّلة مسبقاً لا تسأل عنها مرة أخرى):
+- العمر: ${hp.age || "غير محدد"} سنة
+- الوزن: ${hp.weight || "غير محدد"} كج
+- الطول: ${hp.height || "غير محدد"} سم
+- الجنس: ${hp.gender === "male" ? "ذكر" : hp.gender === "female" ? "أنثى" : "غير محدد"}
+- الأمراض: ${diseases.length > 0 ? diseases.join("، ") : "لا يوجد"}
+- الهدف: ${hp.goal === "weight_loss" ? "خسارة الوزن" : hp.goal === "blood_sugar" ? "تنظيم السكر" : hp.goal === "blood_pressure" ? "تنظيم الضغط" : hp.goal === "cholesterol" ? "تحسين الكوليسترول" : "صحة عامة"}
+- مستوى النشاط: ${hp.activityLevel === "sedentary" ? "خامل" : hp.activityLevel === "light" ? "خفيف" : hp.activityLevel === "moderate" ? "متوسط" : "نشيط"}
+${hp.allergies ? `- حساسية: ${hp.allergies}` : ""}
+`;
+        }
+
         const systemPrompt = `أنت مساعد تغذية ذكي لموقع FoodCure، متجر صحي يبيع مكملات غذائية ومنتجات صحية.
 
 هدفك الأساسي:
 1. صناعة نظام غذائي يومي مخصص للمستخدم بناءً على حالته الصحية
 2. ترشيح منتجات مناسبة من متجر FoodCure
-
+${healthProfileContext}
 المحادثة موجّهة بهذه الخطوات:
-- الخطوة 1 (greeting): رحّب وابدأ باسأل عن الحالة الصحية
+${input.healthProfile ? `- لديك بيانات المستخدم مسبقاً. ابدأ مباشرة بتصميم النظام الغذائي دون أسئلة متكررة` : `- الخطوة 1 (greeting): رحّب وابدأ باسأل عن الحالة الصحية
 - الخطوة 2 (condition): بعد معرفة الحالة، اسأل عن العمر والوزن التقريبي والهدف
-- الخطوة 3 (details): بعد التفاصيل، اصنع نظام غذائي يومي كامل (فطور-غداء-عشاء-سناك)
-- الخطوة 4 (products): رشّح 3-5 منتجات من المتجر مناسبة للحالة
+- الخطوة 3 (details): بعد التفاصيل، اصنع نظام غذائي يومي كامل (فطور-غداء-عشاء-سناك)`}
+- الخطوة الأخيرة (products): رشّح 3-5 منتجات من المتجر مناسبة للحالة
 
 منتجات المتجر المتاحة:
 ${JSON.stringify(productsContext, null, 2)}
@@ -295,8 +350,33 @@ ${nutritionContext}
 - في نهاية كل رد يتضمن توصيات: أضف "⚠️ هذه التوصيات عامة وليست بديلاً عن استشارة الطبيب"
 - اكتب بالعربية دائماً`;
 
+        // Add PDF export instruction
+        const pdfInstruction = `
+عند انتهاء تصميم النظام الغذائي، أضف في نهاية ردك هذا النص بالضبط:
+[PDF_READY]
+هذا يعني أن النظام جاهز للتحميل، سيظهر زر تحميل PDF للمستخدم.
+[/PDF_READY]`;
+
+        const fullSystemPrompt = systemPrompt + `
+
+منتجات المتجر المتاحة:
+${JSON.stringify(productsContext, null, 2)}
+${nutritionContext}
+
+قواعد مهمة:
+- لا تقدم تشخيصاً طبياً أو أدوية
+- قدّم توصيات غذائية عامة فقط
+- كن ودّياً وبسيطاً ومختصراً
+- عند ترشيح المنتجات، استخدم هذا التنسيق بالضبط:
+[PRODUCTS]
+{"products": [{"id": 1, "name": "اسم المنتج", "reason": "سبب التوصية"}]}
+[/PRODUCTS]
+- في نهاية كل رد يتضمن توصيات: أضف "⚠️ هذه التوصيات عامة وليست بديلاً عن استشارة الطبيب"
+- اكتب بالعربية دائماً
+- عند انتهاء تصميم النظام الغذائي أضف [PDF_READY] في نهاية ردك`;
+
         const llmMessages = [
-          { role: "system" as const, content: systemPrompt },
+          { role: "system" as const, content: fullSystemPrompt },
           ...input.messages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
         ];
 
@@ -317,12 +397,20 @@ ${nutritionContext}
           } catch (e) { /* ignore */ }
         }
 
-        // Clean content from the PRODUCTS block
-        const cleanContent = content.replace(/\[PRODUCTS\][\s\S]*?\[\/PRODUCTS\]/g, "").trim();
+        // Check if PDF is ready
+        const pdfReady = content.includes("[PDF_READY]");
+
+        // Clean content from blocks
+        const cleanContent = content
+          .replace(/\[PRODUCTS\][\s\S]*?\[\/PRODUCTS\]/g, "")
+          .replace(/\[PDF_READY\][\s\S]*?\[\/PDF_READY\]/g, "")
+          .replace("[PDF_READY]", "")
+          .trim();
 
         return {
           message: cleanContent,
           recommendedProducts,
+          pdfReady,
         };
       }),
   }),

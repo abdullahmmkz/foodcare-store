@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { X, Send, Bot, User, ShoppingBag, ExternalLink, Loader2, Leaf, ChevronRight } from "lucide-react";
+import { X, Send, Bot, User, ShoppingBag, ExternalLink, Loader2, ChevronRight, Download, CheckCircle2 } from "lucide-react";
+import { jsPDF } from "jspdf";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
   products?: RecommendedProduct[];
+  pdfReady?: boolean;
 };
 
 type RecommendedProduct = {
@@ -19,7 +21,6 @@ type RecommendedProduct = {
 
 type Step = "greeting" | "condition" | "details" | "plan" | "products";
 
-// Quick reply options for guided flow
 const CONDITION_OPTIONS = [
   { label: "🩸 السكري", value: "سكري" },
   { label: "💓 الضغط", value: "ضغط" },
@@ -29,16 +30,51 @@ const CONDITION_OPTIONS = [
   { label: "🥗 تنحيف", value: "تنحيف" },
 ];
 
-interface ChatBotProps {
-  onClose: () => void;
+interface HealthProfile {
+  age?: number | null;
+  weight?: number | null;
+  height?: number | null;
+  gender?: string | null;
+  diseases?: string | null;
+  goal?: string | null;
+  activityLevel?: string | null;
+  allergies?: string | null;
 }
 
-export default function ChatBot({ onClose }: ChatBotProps) {
+interface ChatBotProps {
+  onClose: () => void;
+  healthProfile?: HealthProfile | null;
+  userName?: string;
+}
+
+function buildInitialMessage(profile: HealthProfile | null | undefined, userName?: string): string {
+  if (!profile) {
+    return `مرحباً${userName ? " " + userName : ""}! 👋 أنا مساعدك الغذائي الذكي في FoodCure.\n\nسأساعدك في صناعة نظام غذائي مخصص لحالتك الصحية وأرشّح لك أفضل المنتجات المناسبة.\n\nما هي حالتك الصحية أو هدفك؟`;
+  }
+  let diseases: string[] = [];
+  try { diseases = profile.diseases ? JSON.parse(profile.diseases) : []; } catch { diseases = []; }
+  const goalMap: Record<string, string> = {
+    weight_loss: "خسارة الوزن", blood_sugar: "تنظيم السكر",
+    blood_pressure: "تنظيم الضغط", cholesterol: "تحسين الكوليسترول", general_health: "صحة عامة",
+  };
+  const activityMap: Record<string, string> = {
+    sedentary: "خامل", light: "خفيف", moderate: "متوسط", active: "نشيط",
+  };
+  let summary = `مرحباً${userName ? " " + userName : ""}! 👋 لقد قرأت ملفك الصحي:\n\n`;
+  if (profile.age) summary += `📅 العمر: ${profile.age} سنة\n`;
+  if (profile.weight) summary += `⚖️ الوزن: ${profile.weight} كجم\n`;
+  if (profile.height) summary += `📏 الطول: ${profile.height} سم\n`;
+  if (diseases.length > 0) summary += `🏥 الحالات الصحية: ${diseases.join("، ")}\n`;
+  if (profile.goal) summary += `🎯 الهدف: ${goalMap[profile.goal] || profile.goal}\n`;
+  if (profile.activityLevel) summary += `🏃 النشاط: ${activityMap[profile.activityLevel] || profile.activityLevel}\n`;
+  if (profile.allergies) summary += `🚫 الحساسية: ${profile.allergies}\n`;
+  summary += `\nسأصمم لك نظاماً غذائياً مخصصاً بناءً على هذه المعلومات. هل تريد أن أبدأ الآن؟`;
+  return summary;
+}
+
+export default function ChatBot({ onClose, healthProfile, userName }: ChatBotProps) {
   const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "مرحباً! 👋 أنا مساعدك الغذائي الذكي في FoodCure.\n\nسأساعدك في صناعة نظام غذائي مخصص لحالتك الصحية وأرشّح لك أفضل المنتجات المناسبة.\n\nما هي حالتك الصحية أو هدفك؟",
-    },
+    { role: "assistant", content: buildInitialMessage(healthProfile, userName) },
   ]);
   const [input, setInput] = useState("");
   const [step, setStep] = useState<Step>("greeting");
@@ -53,9 +89,9 @@ export default function ChatBot({ onClose }: ChatBotProps) {
         role: "assistant",
         content: data.message,
         products: data.recommendedProducts?.length > 0 ? data.recommendedProducts : undefined,
+        pdfReady: data.pdfReady,
       }]);
       setIsTyping(false);
-      // Advance step
       setStep(prev => {
         if (prev === "greeting") return "condition";
         if (prev === "condition") return "details";
@@ -64,10 +100,7 @@ export default function ChatBot({ onClose }: ChatBotProps) {
       });
     },
     onError: () => {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "عذراً، حدث خطأ. حاول مرة أخرى.",
-      }]);
+      setMessages(prev => [...prev, { role: "assistant", content: "عذراً، حدث خطأ. حاول مرة أخرى." }]);
       setIsTyping(false);
     },
   });
@@ -78,38 +111,120 @@ export default function ChatBot({ onClose }: ChatBotProps) {
 
   const sendMessage = (text: string) => {
     if (!text.trim() || isTyping) return;
-
     const userMessage: Message = { role: "user", content: text };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput("");
     setIsTyping(true);
-
-    // Track condition
     const detectedCondition = CONDITION_OPTIONS.find(o => text.includes(o.value))?.value || condition;
     if (detectedCondition && !condition) setCondition(detectedCondition);
-
     chatMutation.mutate({
       messages: newMessages.map(m => ({ role: m.role, content: m.content })),
       step,
       condition: detectedCondition,
+      healthProfile: healthProfile ? {
+        age: healthProfile.age,
+        weight: healthProfile.weight,
+        height: healthProfile.height,
+        gender: healthProfile.gender,
+        diseases: healthProfile.diseases,
+        goal: healthProfile.goal,
+        activityLevel: healthProfile.activityLevel,
+        allergies: healthProfile.allergies,
+      } : undefined,
     });
   };
 
-  const handleQuickReply = (value: string) => {
-    sendMessage(value);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(input);
+  const downloadPlan = () => {
+    const planContent = messages.filter(m => m.role === "assistant").map(m => m.content).join("\n\n---\n\n");
+    // Try PDF first, fallback to HTML
+    try {
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      const maxWidth = pageWidth - margin * 2;
+      // Header
+      doc.setFillColor(5, 150, 105);
+      doc.rect(0, 0, pageWidth, 40, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.text("FoodCure - My Diet Plan", pageWidth / 2, 18, { align: "center" });
+      doc.setFontSize(10);
+      doc.text(`Date: ${new Date().toLocaleDateString("en-US")}`, pageWidth / 2, 28, { align: "center" });
+      // Content
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(10);
+      let y = 55;
+      const lines = doc.splitTextToSize(planContent, maxWidth);
+      for (const line of lines) {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.text(line, margin, y);
+        y += 6;
+      }
+      // Warning
+      if (y > 240) { doc.addPage(); y = 20; }
+      doc.setFillColor(254, 243, 199);
+      doc.rect(margin, y + 5, maxWidth, 18, "F");
+      doc.setTextColor(120, 80, 0);
+      doc.setFontSize(9);
+      doc.text("Warning: This plan is for general awareness only and not a substitute for medical advice.", margin + 3, y + 15);
+      doc.save(`FoodCure-Diet-Plan-${new Date().toISOString().split("T")[0]}.pdf`);
+      return;
+    } catch (_) {
+      // fallback to HTML
     }
+    const htmlContent = `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>نظامي الغذائي - FoodCure</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; direction: rtl; padding: 40px; color: #1a1a1a; max-width: 800px; margin: 0 auto; background: #f9fafb; }
+  .header { background: linear-gradient(135deg, #059669, #047857); color: white; padding: 28px; border-radius: 16px; margin-bottom: 28px; }
+  .header h1 { margin: 0 0 8px; font-size: 24px; }
+  .header p { margin: 4px 0; opacity: 0.85; font-size: 14px; }
+  .section { background: white; border-right: 4px solid #059669; padding: 20px; border-radius: 12px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  pre { white-space: pre-wrap; font-family: inherit; line-height: 1.9; margin: 0; font-size: 14px; }
+  .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 14px; border-radius: 10px; margin-top: 28px; font-size: 13px; }
+  .footer { margin-top: 32px; text-align: center; color: #9ca3af; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🌿 نظامي الغذائي المخصص</h1>
+  <p>مُصمَّم بواسطة المساعد الغذائي الذكي — FoodCure</p>
+  <p>التاريخ: ${new Date().toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })}</p>
+</div>
+<div class="section">
+<pre>${planContent}</pre>
+</div>
+<div class="warning">
+  ⚠️ <strong>تنبيه مهم:</strong> هذا النظام الغذائي مقدَّم لأغراض توعوية عامة فقط وليس بديلاً عن استشارة طبيب أو أخصائي تغذية معتمد. يُرجى مراجعة طبيبك قبل تطبيق أي نظام غذائي.
+</div>
+<div class="footer">FoodCure — متجرك الصحي الذكي</div>
+</body>
+</html>`;
+    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `نظامي-الغذائي-FoodCure-${new Date().toISOString().split("T")[0]}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
+
+  const hasPdfReady = messages.some(m => m.pdfReady);
+  const stepIndex = ["greeting", "condition", "details", "plan"].indexOf(step);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:justify-end sm:p-6 bg-black/40 backdrop-blur-sm">
-      <div className="w-full sm:w-[420px] h-[85vh] sm:h-[600px] bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-border">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:justify-end sm:p-6 bg-black/40 backdrop-blur-sm" dir="rtl">
+      <div className="w-full sm:w-[440px] h-[88vh] sm:h-[630px] bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-border">
 
         {/* Header */}
         <div className="bg-primary px-4 py-3 flex items-center gap-3 shrink-0">
@@ -120,18 +235,34 @@ export default function ChatBot({ onClose }: ChatBotProps) {
             <h3 className="font-bold text-white text-sm">المساعد الغذائي الذكي</h3>
             <p className="text-white/70 text-xs">FoodCure AI • نظام غذائي مخصص</p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
-          >
-            <X size={16} className="text-white" />
-          </button>
+          <div className="flex items-center gap-2">
+            {hasPdfReady && (
+              <button
+                onClick={downloadPlan}
+                title="تحميل النظام الغذائي"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-white text-xs font-semibold transition-colors"
+              >
+                <Download size={13} />
+                <span>تحميل</span>
+              </button>
+            )}
+            <button onClick={onClose} className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors">
+              <X size={16} className="text-white" />
+            </button>
+          </div>
         </div>
+
+        {/* Health profile badge */}
+        {healthProfile && (
+          <div className="bg-emerald-50 border-b border-emerald-100 px-4 py-2 flex items-center gap-2 shrink-0">
+            <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+            <p className="text-xs text-emerald-700 font-medium">ملفك الصحي محمّل — سيبدأ المساعد مباشرة بتصميم نظامك</p>
+          </div>
+        )}
 
         {/* Step indicator */}
         <div className="bg-primary/5 border-b border-border px-4 py-2 flex items-center gap-1 shrink-0">
           {["الحالة الصحية", "التفاصيل", "النظام الغذائي", "المنتجات"].map((s, i) => {
-            const stepIndex = ["greeting", "condition", "details", "plan"].indexOf(step);
             const isActive = i <= stepIndex;
             return (
               <div key={s} className="flex items-center gap-1">
@@ -149,30 +280,32 @@ export default function ChatBot({ onClose }: ChatBotProps) {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((msg, idx) => (
             <div key={idx} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-              {/* Avatar */}
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${msg.role === "user" ? "bg-primary/10" : "bg-primary"}`}>
-                {msg.role === "user"
-                  ? <User size={16} className="text-primary" />
-                  : <Bot size={16} className="text-white" />
-                }
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${msg.role === "user" ? "bg-primary/10" : "bg-primary"}`}>
+                {msg.role === "user" ? <User size={16} className="text-primary" /> : <Bot size={16} className="text-white" />}
               </div>
-
-              {/* Bubble */}
-              <div className={`max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col gap-2`}>
+              <div className={`max-w-[80%] flex flex-col gap-2 ${msg.role === "user" ? "items-end" : "items-start"}`}>
                 <div className={`px-3 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-tr-sm"
-                    : "bg-muted text-foreground rounded-tl-sm"
+                  msg.role === "user" ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-muted text-foreground rounded-tl-sm"
                 }`}>
                   {msg.content}
                 </div>
 
-                {/* Product Cards */}
+                {/* PDF download button inline */}
+                {msg.pdfReady && (
+                  <button
+                    onClick={downloadPlan}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors shadow-md"
+                  >
+                    <Download size={13} />
+                    تحميل نظامي الغذائي
+                  </button>
+                )}
+
+                {/* Product cards */}
                 {msg.products && msg.products.length > 0 && (
                   <div className="w-full space-y-2 mt-1">
                     <p className="text-xs font-bold text-primary flex items-center gap-1">
-                      <ShoppingBag size={12} />
-                      منتجات مقترحة لك من FoodCure:
+                      <ShoppingBag size={12} /> منتجات مقترحة لك من FoodCure:
                     </p>
                     {msg.products.map(product => (
                       <div key={product.id} className="bg-white border border-border rounded-xl p-3 flex gap-3 shadow-sm hover:shadow-md transition-shadow">
@@ -180,17 +313,13 @@ export default function ChatBot({ onClose }: ChatBotProps) {
                           src={product.image}
                           alt={product.name}
                           className="w-14 h-14 object-cover rounded-lg shrink-0 bg-muted"
-                          onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/56x56?text=🌿"; }}
+                          onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/56x56/e8f5e9/059669?text=🌿"; }}
                         />
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-xs text-foreground line-clamp-2">{product.name}</p>
-                          {product.reason && (
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">✓ {product.reason}</p>
-                          )}
+                          {product.reason && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">✓ {product.reason}</p>}
                           {product.diseaseName && (
-                            <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                              {product.diseaseName}
-                            </span>
+                            <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{product.diseaseName}</span>
                           )}
                           <a
                             href={product.link}
@@ -198,9 +327,7 @@ export default function ChatBot({ onClose }: ChatBotProps) {
                             rel="noopener noreferrer"
                             className="mt-2 flex items-center gap-1 text-xs font-bold text-white bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors w-fit"
                           >
-                            <ShoppingBag size={11} />
-                            اشتر الآن
-                            <ExternalLink size={10} />
+                            <ShoppingBag size={11} /> اشتر الآن <ExternalLink size={10} />
                           </a>
                         </div>
                       </div>
@@ -224,25 +351,36 @@ export default function ChatBot({ onClose }: ChatBotProps) {
               </div>
             </div>
           )}
-
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick Replies - show only at greeting step */}
-        {step === "greeting" && !isTyping && (
+        {/* Quick replies for users WITHOUT health profile */}
+        {!healthProfile && step === "greeting" && !isTyping && (
           <div className="px-4 pb-2 shrink-0">
             <p className="text-xs text-muted-foreground mb-2">اختر حالتك الصحية:</p>
             <div className="flex flex-wrap gap-2">
               {CONDITION_OPTIONS.map(opt => (
                 <button
                   key={opt.value}
-                  onClick={() => handleQuickReply(opt.value)}
+                  onClick={() => sendMessage(opt.value)}
                   className="text-xs px-3 py-1.5 bg-primary/10 text-primary rounded-full font-semibold hover:bg-primary hover:text-white transition-colors"
                 >
                   {opt.label}
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Quick start for users WITH health profile */}
+        {healthProfile && step === "greeting" && !isTyping && (
+          <div className="px-4 pb-3 shrink-0">
+            <button
+              onClick={() => sendMessage("نعم، ابدأ تصميم نظامي الغذائي بناءً على ملفي الصحي")}
+              className="w-full py-3 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors shadow-md"
+            >
+              🚀 ابدأ تصميم نظامي الغذائي الآن
+            </button>
           </div>
         )}
 

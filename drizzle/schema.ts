@@ -82,3 +82,22 @@ export const cartItems = mysqlTable("cart_items", {
 
 export type CartItem = typeof cartItems.$inferSelect;
 export type InsertCartItem = typeof cartItems.$inferInsert;
+
+// Health profile table - stores user health data for chatbot
+export const healthProfiles = mysqlTable("health_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  age: int("age"),
+  weight: int("weight"), // kg
+  height: int("height"), // cm
+  gender: mysqlEnum("gender", ["male", "female"]),
+  diseases: text("diseases"), // JSON array of disease names
+  goal: mysqlEnum("goal", ["weight_loss", "blood_sugar", "blood_pressure", "cholesterol", "general_health"]),
+  activityLevel: mysqlEnum("activityLevel", ["sedentary", "light", "moderate", "active"]),
+  allergies: text("allergies"), // free text
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type HealthProfile = typeof healthProfiles.$inferSelect;
+export type InsertHealthProfile = typeof healthProfiles.$inferInsert;

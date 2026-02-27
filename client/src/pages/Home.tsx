@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, MessageCircle, LogIn, Shield, LogOut, UserCircle, Bot } from "lucide-react";
 import ChatBot from "@/components/ChatBot";
+import HealthProfileModal from "@/components/HealthProfileModal";
 import { trpc } from "@/lib/trpc";
 import ProductCard, { type ProductItem } from "@/components/ProductCard";
 import QuickViewModal from "@/components/QuickViewModal";
@@ -26,12 +27,28 @@ export default function Home() {
 
   const isAuthenticated = !!localUser;
   const user = localUser;
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedDiseaseId, setSelectedDiseaseId] = useState<number | undefined>(undefined);
   const [sort] = useState<SortType>("newest");
   const [showChatBot, setShowChatBot] = useState(false);
+  const [showHealthProfile, setShowHealthProfile] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<ProductItem | null>(null);
+
+  // Health profile
+  const { data: healthProfile } = trpc.healthProfile.get.useQuery(
+    { userId: user?.id ?? 0 },
+    { enabled: isAuthenticated && !!user?.id }
+  );
+
+  // Auto-show health profile modal after login if no profile exists
+  useEffect(() => {
+    if (isAuthenticated && user?.id && healthProfile === null) {
+      const timer = setTimeout(() => setShowHealthProfile(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, user?.id, healthProfile]);
   const [allProducts, setAllProducts] = useState<ProductItem[]>([]);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -161,6 +178,14 @@ export default function Home() {
                     </div>
                     <span className="hidden md:block text-sm font-semibold text-foreground max-w-[100px] truncate">{user?.name}</span>
                   </div>
+                  <button
+                    onClick={() => setShowHealthProfile(true)}
+                    className="flex items-center gap-1.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors px-2 py-1.5 rounded-lg border border-primary/20"
+                    title="ملفي الصحي"
+                  >
+                    <UserCircle size={15} />
+                    <span className="hidden sm:inline text-xs">ملفي</span>
+                  </button>
                   <button
                     onClick={() => localLogout.mutate()}
                     className="flex items-center gap-1 text-sm text-muted-foreground hover:text-destructive transition-colors px-2 py-1.5 rounded-lg hover:bg-destructive/10"
@@ -328,7 +353,24 @@ export default function Home() {
 
       {/* ─── ChatBot ──────────────────────────────────────────────────────── */}
       {showChatBot && (
-        <ChatBot onClose={() => setShowChatBot(false)} />
+        <ChatBot
+          onClose={() => setShowChatBot(false)}
+          healthProfile={healthProfile}
+          userName={user?.name || undefined}
+        />
+      )}
+
+      {/* ─── Health Profile Modal ─────────────────────────────────────────── */}
+      {showHealthProfile && user && (
+        <HealthProfileModal
+          userId={user.id}
+          userName={user.name || "مستخدم"}
+          onClose={() => setShowHealthProfile(false)}
+          onComplete={() => {
+            setShowHealthProfile(false);
+            toast.success("تم حفظ ملفك الصحي!");
+          }}
+        />
       )}
 
       {/* ─── Quick View Modal ──────────────────────────────────────────────── */}

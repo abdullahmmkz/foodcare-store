@@ -1,6 +1,6 @@
 import { and, desc, eq, ilike, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { cartItems, diseases, InsertDisease, InsertLocalUser, InsertProduct, InsertUser, localUsers, products, users, wishlist } from "../drizzle/schema";
+import { cartItems, diseases, healthProfiles, InsertDisease, InsertHealthProfile, InsertLocalUser, InsertProduct, InsertUser, localUsers, products, users, wishlist } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -366,6 +366,29 @@ export async function getCartProductIds(userId: number): Promise<number[]> {
   if (!db) return [];
   const result = await db.select({ productId: cartItems.productId }).from(cartItems).where(eq(cartItems.userId, userId));
   return result.map(r => r.productId);
+}
+
+// ─── Health Profile ──────────────────────────────────────────────────────────
+
+export async function getHealthProfile(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(healthProfiles).where(eq(healthProfiles.userId, userId)).limit(1);
+  return result[0];
+}
+
+export async function upsertHealthProfile(userId: number, data: Omit<InsertHealthProfile, 'userId'>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(healthProfiles).where(eq(healthProfiles.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(healthProfiles)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(healthProfiles.userId, userId));
+  } else {
+    await db.insert(healthProfiles).values({ userId, ...data });
+  }
+  return getHealthProfile(userId);
 }
 
 export async function getAllProductsAdmin() {
