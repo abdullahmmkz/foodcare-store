@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO local_users (name, email, passwordHash, role, createdAt, updatedAt) \nVALUES ('Abdullah Alzhrani', 'abdullah.m.m.k.z@gmail.com', '$2b$10$kREy7jLdrArXRcYxeC1ZPOc9WJbxG.2yO2RAPQCN7NhEysb1WYIgG', 'admin', NOW(), NOW())\nON DUPLICATE KEY UPDATE \n  name = 'Abdullah Alzhrani',\n  passwordHash = '$2b$10$kREy7jLdrArXRcYxeC1ZPOc9WJbxG.2yO2RAPQCN7NhEysb1WYIgG',\n  role = 'admin',\n  updatedAt = NOW();",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2CDbTqdqtw4FQjd.root --database GHTpfk4SpEdMpWpbzXoixY --execute INSERT INTO local_users (name, email, passwordHash, role, createdAt, updatedAt) \nVALUES ('Abdullah Alzhrani', 'abdullah.m.m.k.z@gmail.com', '$2b$10$kREy7jLdrArXRcYxeC1ZPOc9WJbxG.2yO2RAPQCN7NhEysb1WYIgG', 'admin', NOW(), NOW())\nON DUPLICATE KEY UPDATE \n  name = 'Abdullah Alzhrani',\n  passwordHash = '$2b$10$kREy7jLdrArXRcYxeC1ZPOc9WJbxG.2yO2RAPQCN7NhEysb1WYIgG',\n  role = 'admin',\n  updatedAt = NOW();",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1959
+}

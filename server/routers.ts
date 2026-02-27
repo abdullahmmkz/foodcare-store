@@ -13,6 +13,8 @@ import {
   getAllProductsAdmin,
   createLocalUser, getLocalUserByEmail, getLocalUserById,
 } from "./db";
+import { invokeLLM } from "./_core/llm";
+import axios from "axios";
 
 const LOCAL_COOKIE = "fc_local_session";
 
@@ -212,6 +214,116 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await deleteProduct(input.id);
         return { success: true };
+      }),
+  }),
+  // ─── ChatBot ─────────────────────────────────────────────────────────────
+  chatbot: router({
+    chat: publicProcedure
+      .input(z.object({
+        messages: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        })),
+        // Current step in the guided flow
+        step: z.enum(["greeting", "condition", "details", "plan", "products"]).default("greeting"),
+        // Collected user data
+        condition: z.string().optional(),
+        age: z.string().optional(),
+        weight: z.string().optional(),
+        goal: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Fetch all products from the store to use as context
+        const storeProducts = await getProducts({ limit: 100, offset: 0 });
+        const productsContext = storeProducts.items.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          disease: p.diseaseName,
+          link: p.link,
+          image: p.image,
+        }));
+
+        // Fetch nutrition data from Open Food Facts if we have a condition
+        let nutritionContext = "";
+        if (input.condition) {
+          try {
+            const searchTerm = input.condition === "سكري" ? "diabetic" :
+              input.condition === "ضغط" ? "low sodium" :
+              input.condition === "كوليسترول" ? "cholesterol" :
+              input.condition === "سمنة" ? "low calorie" : "healthy";
+            const offRes = await axios.get(
+              `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${searchTerm}&search_simple=1&action=process&json=1&page_size=5&fields=product_name,nutriments,categories_tags`,
+              { timeout: 5000 }
+            );
+            if (offRes.data?.products?.length > 0) {
+              const foods = offRes.data.products
+                .filter((p: any) => p.product_name)
+                .slice(0, 5)
+                .map((p: any) => p.product_name)
+                .join("، ");
+              nutritionContext = `\nأمثلة أطعمة مناسبة من قاعدة بيانات Open Food Facts: ${foods}`;
+            }
+          } catch (e) {
+            // Ignore API errors, continue without nutrition data
+          }
+        }
+
+        const systemPrompt = `أنت مساعد تغذية ذكي لموقع FoodCure، متجر صحي يبيع مكملات غذائية ومنتجات صحية.
+
+هدفك الأساسي:
+1. صناعة نظام غذائي يومي مخصص للمستخدم بناءً على حالته الصحية
+2. ترشيح منتجات مناسبة من متجر FoodCure
+
+المحادثة موجّهة بهذه الخطوات:
+- الخطوة 1 (greeting): رحّب وابدأ باسأل عن الحالة الصحية
+- الخطوة 2 (condition): بعد معرفة الحالة، اسأل عن العمر والوزن التقريبي والهدف
+- الخطوة 3 (details): بعد التفاصيل، اصنع نظام غذائي يومي كامل (فطور-غداء-عشاء-سناك)
+- الخطوة 4 (products): رشّح 3-5 منتجات من المتجر مناسبة للحالة
+
+منتجات المتجر المتاحة:
+${JSON.stringify(productsContext, null, 2)}
+${nutritionContext}
+
+قواعد مهمة:
+- لا تقدم تشخيصاً طبياً أو أدوية
+- قدم توصيات غذائية عامة فقط
+- كن ودّياً وبسيطاً ومختصراً
+- عند ترشيح المنتجات، استخدم هذا التنسيق بالضبط:
+[PRODUCTS]
+{"products": [{"id": 1, "name": "اسم المنتج", "reason": "سبب التوصية"}]}
+[/PRODUCTS]
+- في نهاية كل رد يتضمن توصيات: أضف "⚠️ هذه التوصيات عامة وليست بديلاً عن استشارة الطبيب"
+- اكتب بالعربية دائماً`;
+
+        const llmMessages = [
+          { role: "system" as const, content: systemPrompt },
+          ...input.messages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+        ];
+
+        const response = await invokeLLM({ messages: llmMessages });
+        const rawContent = response.choices[0]?.message?.content || "عذراً، حدث خطأ. حاول مرة أخرى.";
+        const content = typeof rawContent === "string" ? rawContent : "عذراً، حدث خطأ. حاول مرة أخرى.";
+
+        // Extract product recommendations if present
+        let recommendedProducts: any[] = [];
+        const productsMatch = content.match(/\[PRODUCTS\]([\s\S]*?)\[\/PRODUCTS\]/);
+        if (productsMatch) {
+          try {
+            const parsed = JSON.parse(productsMatch[1].trim());
+            const ids = parsed.products?.map((p: any) => p.id) || [];
+            recommendedProducts = storeProducts.items
+              .filter((p: any) => ids.includes(p.id))
+              .map((p: any) => ({ ...p, reason: parsed.products.find((r: any) => r.id === p.id)?.reason }));
+          } catch (e) { /* ignore */ }
+        }
+
+        // Clean content from the PRODUCTS block
+        const cleanContent = content.replace(/\[PRODUCTS\][\s\S]*?\[\/PRODUCTS\]/g, "").trim();
+
+        return {
+          message: cleanContent,
+          recommendedProducts,
+        };
       }),
   }),
 });

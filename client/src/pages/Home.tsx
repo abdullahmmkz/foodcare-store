@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, TrendingUp, Clock, DollarSign, LogIn, Shield, LogOut, UserCircle } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, MessageCircle, LogIn, Shield, LogOut, UserCircle, Bot } from "lucide-react";
+import ChatBot from "@/components/ChatBot";
 import { trpc } from "@/lib/trpc";
 import ProductCard, { type ProductItem } from "@/components/ProductCard";
 import QuickViewModal from "@/components/QuickViewModal";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 
-type SortType = "newest" | "popular" | "cheapest";
+type SortType = "newest";
 
 const LIMIT = 12;
 
@@ -28,7 +29,8 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedDiseaseId, setSelectedDiseaseId] = useState<number | undefined>(undefined);
-  const [sort, setSort] = useState<SortType>("newest");
+  const [sort] = useState<SortType>("newest");
+  const [showChatBot, setShowChatBot] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<ProductItem | null>(null);
   const [allProducts, setAllProducts] = useState<ProductItem[]>([]);
   const [offset, setOffset] = useState(0);
@@ -103,11 +105,7 @@ export default function Home() {
     categoriesRef.current.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
   };
 
-  const sortOptions: { value: SortType; label: string; icon: React.ReactNode }[] = [
-    { value: "newest", label: "الأحدث", icon: <Clock size={14} /> },
-    { value: "popular", label: "الأكثر مبيعاً", icon: <TrendingUp size={14} /> },
-    { value: "cheapest", label: "الأرخص", icon: <DollarSign size={14} /> },
-  ];
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -271,23 +269,15 @@ export default function Home() {
             )}
           </div>
 
-          {/* Sort Filters */}
-          <div className="flex items-center gap-2">
-            {sortOptions.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setSort(opt.value)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-                  sort === opt.value
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:bg-accent"
-                }`}
-              >
-                {opt.icon}
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          {/* ChatBot Button */}
+          <button
+            onClick={() => setShowChatBot(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md hover:bg-primary/90 transition-all duration-200 animate-pulse-slow"
+          >
+            <Bot size={16} />
+            <span className="hidden sm:inline">المساعد الذكي</span>
+            <span className="sm:hidden">AI</span>
+          </button>
         </div>
 
         {/* Products Grid */}
@@ -336,6 +326,11 @@ export default function Home() {
         )}
       </main>
 
+      {/* ─── ChatBot ──────────────────────────────────────────────────────── */}
+      {showChatBot && (
+        <ChatBot onClose={() => setShowChatBot(false)} />
+      )}
+
       {/* ─── Quick View Modal ──────────────────────────────────────────────── */}
       {quickViewProduct && (
         <QuickViewModal
@@ -352,7 +347,7 @@ export default function Home() {
               <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
                 <Leaf size={16} className="text-primary-foreground" />
               </div>
-              <span className="font-black text-foreground">صحتي ستور</span>
+              <span className="font-black text-foreground">FoodCure</span>
             </div>
             <p className="text-xs text-muted-foreground text-center">
               منتجات صحية مختارة من Amazon وNoon • جميع الروابط روابط Affiliate

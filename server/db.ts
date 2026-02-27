@@ -1,6 +1,6 @@
 import { and, desc, eq, ilike, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { diseases, InsertDisease, InsertLocalUser, InsertProduct, InsertUser, localUsers, products, users } from "../drizzle/schema";
+import { cartItems, diseases, InsertDisease, InsertLocalUser, InsertProduct, InsertUser, localUsers, products, users, wishlist } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -246,6 +246,126 @@ export async function getLocalUserById(id: number) {
   if (!db) return undefined;
   const result = await db.select().from(localUsers).where(eq(localUsers.id, id)).limit(1);
   return result[0];
+}
+
+// ─── Wishlist ────────────────────────────────────────────────────────────────
+export async function getWishlistByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: wishlist.id,
+      productId: wishlist.productId,
+      createdAt: wishlist.createdAt,
+      productName: products.name,
+      productImage: products.image,
+      productLink: products.link,
+      productPrice: products.price,
+      diseaseId: products.diseaseId,
+      diseaseName: diseases.nameAr,
+    })
+    .from(wishlist)
+    .leftJoin(products, eq(wishlist.productId, products.id))
+    .leftJoin(diseases, eq(products.diseaseId, diseases.id))
+    .where(eq(wishlist.userId, userId))
+    .orderBy(desc(wishlist.createdAt));
+}
+
+export async function addToWishlist(userId: number, productId: number) {
+  const db = await getDb();
+  if (!db) return;
+  // Check if already exists
+  const existing = await db.select().from(wishlist)
+    .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)))
+    .limit(1);
+  if (existing.length > 0) return existing[0];
+  await db.insert(wishlist).values({ userId, productId });
+}
+
+export async function removeFromWishlist(userId: number, productId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(wishlist).where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)));
+}
+
+export async function isInWishlist(userId: number, productId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.select().from(wishlist)
+    .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)))
+    .limit(1);
+  return result.length > 0;
+}
+
+export async function getWishlistProductIds(userId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db.select({ productId: wishlist.productId }).from(wishlist).where(eq(wishlist.userId, userId));
+  return result.map(r => r.productId);
+}
+
+// ─── Cart ─────────────────────────────────────────────────────────────────────
+export async function getCartByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: cartItems.id,
+      productId: cartItems.productId,
+      quantity: cartItems.quantity,
+      createdAt: cartItems.createdAt,
+      productName: products.name,
+      productImage: products.image,
+      productLink: products.link,
+      productPrice: products.price,
+      diseaseId: products.diseaseId,
+      diseaseName: diseases.nameAr,
+    })
+    .from(cartItems)
+    .leftJoin(products, eq(cartItems.productId, products.id))
+    .leftJoin(diseases, eq(products.diseaseId, diseases.id))
+    .where(eq(cartItems.userId, userId))
+    .orderBy(desc(cartItems.createdAt));
+}
+
+export async function addToCart(userId: number, productId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select().from(cartItems)
+    .where(and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)))
+    .limit(1);
+  if (existing.length > 0) {
+    await db.update(cartItems)
+      .set({ quantity: existing[0].quantity + 1 })
+      .where(eq(cartItems.id, existing[0].id));
+  } else {
+    await db.insert(cartItems).values({ userId, productId, quantity: 1 });
+  }
+}
+
+export async function removeFromCart(userId: number, productId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(cartItems).where(and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)));
+}
+
+export async function updateCartQuantity(userId: number, productId: number, quantity: number) {
+  const db = await getDb();
+  if (!db) return;
+  if (quantity <= 0) {
+    await removeFromCart(userId, productId);
+    return;
+  }
+  await db.update(cartItems)
+    .set({ quantity })
+    .where(and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)));
+}
+
+export async function getCartProductIds(userId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db.select({ productId: cartItems.productId }).from(cartItems).where(eq(cartItems.userId, userId));
+  return result.map(r => r.productId);
 }
 
 export async function getAllProductsAdmin() {
