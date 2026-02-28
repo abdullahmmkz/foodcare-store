@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { X, Send, Bot, User, ShoppingBag, ExternalLink, Loader2, ChevronRight, Download, CheckCircle2 } from "lucide-react";
+import { X, Send, Bot, User, ShoppingBag, ExternalLink, Loader2, ChevronRight, Download, CheckCircle2, Sparkles, Package } from "lucide-react";
 import { jsPDF } from "jspdf";
 
 type Message = {
@@ -15,8 +15,11 @@ type RecommendedProduct = {
   name: string;
   image: string;
   link: string;
+  price?: string | null;
   diseaseName?: string;
+  diseaseIcon?: string;
   reason?: string;
+  supplement?: string;
 };
 
 type Step = "greeting" | "condition" | "details" | "plan" | "products";
@@ -49,7 +52,7 @@ interface ChatBotProps {
 
 function buildInitialMessage(profile: HealthProfile | null | undefined, userName?: string): string {
   if (!profile) {
-    return `مرحباً${userName ? " " + userName : ""}! 👋 أنا مساعدك الغذائي الذكي في FoodCure.\n\nسأساعدك في صناعة نظام غذائي مخصص لحالتك الصحية وأرشّح لك أفضل المنتجات المناسبة.\n\nما هي حالتك الصحية أو هدفك؟`;
+    return `مرحباً${userName ? " " + userName : ""}! 👋 أنا مساعدك الغذائي الذكي في FoodCure.\n\nسأساعدك في صناعة نظام غذائي مخصص لحالتك الصحية وأرشّح لك أفضل المنتجات المناسبة من متجرنا.\n\nما هي حالتك الصحية أو هدفك؟`;
   }
   let diseases: string[] = [];
   try { diseases = profile.diseases ? JSON.parse(profile.diseases) : []; } catch { diseases = []; }
@@ -68,7 +71,7 @@ function buildInitialMessage(profile: HealthProfile | null | undefined, userName
   if (profile.goal) summary += `🎯 الهدف: ${goalMap[profile.goal] || profile.goal}\n`;
   if (profile.activityLevel) summary += `🏃 النشاط: ${activityMap[profile.activityLevel] || profile.activityLevel}\n`;
   if (profile.allergies) summary += `🚫 الحساسية: ${profile.allergies}\n`;
-  summary += `\nسأصمم لك نظاماً غذائياً مخصصاً بناءً على هذه المعلومات. هل تريد أن أبدأ الآن؟`;
+  summary += `\nسأصمم لك نظاماً غذائياً مخصصاً مع توصيات منتجات من متجرنا. هل تريد أن أبدأ الآن؟`;
   return summary;
 }
 
@@ -141,7 +144,6 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
 
   const downloadPlan = () => {
     const planContent = messages.filter(m => m.role === "assistant").map(m => m.content).join("\n\n---\n\n");
-    // Try PDF first, fallback to HTML
     try {
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -203,7 +205,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
 <pre>${planContent}</pre>
 </div>
 <div class="warning">
-  ⚠️ <strong>تنبيه مهم:</strong> هذا النظام الغذائي مقدَّم لأغراض توعوية عامة فقط وليس بديلاً عن استشارة طبيب أو أخصائي تغذية معتمد. يُرجى مراجعة طبيبك قبل تطبيق أي نظام غذائي.
+  ⚠️ <strong>تنبيه مهم:</strong> هذا النظام الغذائي مقدَّم لأغراض توعوية عامة فقط وليس بديلاً عن استشارة طبيب أو أخصائي تغذية معتمد.
 </div>
 <div class="footer">FoodCure — متجرك الصحي الذكي</div>
 </body>
@@ -224,7 +226,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:justify-end sm:p-6 bg-black/40 backdrop-blur-sm" dir="rtl">
-      <div className="w-full sm:w-[440px] h-[88vh] sm:h-[630px] bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-border">
+      <div className="w-full sm:w-[460px] h-[90vh] sm:h-[650px] bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-border">
 
         {/* Header */}
         <div className="bg-primary px-4 py-3 flex items-center gap-3 shrink-0">
@@ -233,7 +235,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
           </div>
           <div className="flex-1">
             <h3 className="font-bold text-white text-sm">المساعد الغذائي الذكي</h3>
-            <p className="text-white/70 text-xs">FoodCure AI • نظام غذائي مخصص</p>
+            <p className="text-white/70 text-xs">FoodCure AI • نظام غذائي + منتجات مخصصة</p>
           </div>
           <div className="flex items-center gap-2">
             {hasPdfReady && (
@@ -256,12 +258,12 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
         {healthProfile && (
           <div className="bg-emerald-50 border-b border-emerald-100 px-4 py-2 flex items-center gap-2 shrink-0">
             <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-            <p className="text-xs text-emerald-700 font-medium">ملفك الصحي محمّل — سيبدأ المساعد مباشرة بتصميم نظامك</p>
+            <p className="text-xs text-emerald-700 font-medium">ملفك الصحي محمّل — سيرشّح لك منتجات من متجرنا مرتبطة بخطتك</p>
           </div>
         )}
 
         {/* Step indicator */}
-        <div className="bg-primary/5 border-b border-border px-4 py-2 flex items-center gap-1 shrink-0">
+        <div className="px-4 py-2.5 border-b border-border flex items-center gap-2 shrink-0 bg-muted/30">
           {["الحالة الصحية", "التفاصيل", "النظام الغذائي", "المنتجات"].map((s, i) => {
             const isActive = i <= stepIndex;
             return (
@@ -283,7 +285,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${msg.role === "user" ? "bg-primary/10" : "bg-primary"}`}>
                 {msg.role === "user" ? <User size={16} className="text-primary" /> : <Bot size={16} className="text-white" />}
               </div>
-              <div className={`max-w-[80%] flex flex-col gap-2 ${msg.role === "user" ? "items-end" : "items-start"}`}>
+              <div className={`max-w-[82%] flex flex-col gap-2 ${msg.role === "user" ? "items-end" : "items-start"}`}>
                 <div className={`px-3 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                   msg.role === "user" ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-muted text-foreground rounded-tl-sm"
                 }`}>
@@ -297,41 +299,101 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
                     className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors shadow-md"
                   >
                     <Download size={13} />
-                    تحميل نظامي الغذائي
+                    تحميل نظامي الغذائي PDF
                   </button>
                 )}
 
-                {/* Product cards */}
+                {/* Product cards - linked to meal plan components */}
                 {msg.products && msg.products.length > 0 && (
-                  <div className="w-full space-y-2 mt-1">
-                    <p className="text-xs font-bold text-primary flex items-center gap-1">
-                      <ShoppingBag size={12} /> منتجات مقترحة لك من FoodCure:
-                    </p>
-                    {msg.products.map(product => (
-                      <div key={product.id} className="bg-white border border-border rounded-xl p-3 flex gap-3 shadow-sm hover:shadow-md transition-shadow">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-14 h-14 object-cover rounded-lg shrink-0 bg-muted"
-                          onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/56x56/e8f5e9/059669?text=🌿"; }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-xs text-foreground line-clamp-2">{product.name}</p>
-                          {product.reason && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">✓ {product.reason}</p>}
-                          {product.diseaseName && (
-                            <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{product.diseaseName}</span>
-                          )}
-                          <a
-                            href={product.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 flex items-center gap-1 text-xs font-bold text-white bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors w-fit"
-                          >
-                            <ShoppingBag size={11} /> اشتر الآن <ExternalLink size={10} />
-                          </a>
-                        </div>
+                  <div className="w-full mt-1">
+                    {/* Section header */}
+                    <div className="flex items-center gap-2 mb-2 px-1">
+                      <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-full">
+                        <Sparkles size={12} />
+                        <span className="text-xs font-bold">منتجات مرتبطة بخطتك من FoodCure</span>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Product grid */}
+                    <div className="space-y-2">
+                      {msg.products.map((product, pIdx) => (
+                        <div
+                          key={`${product.id}-${pIdx}`}
+                          className="bg-white border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:border-primary/30 group"
+                        >
+                          {/* Supplement link badge */}
+                          {product.supplement && (
+                            <div className="bg-primary/5 border-b border-primary/10 px-3 py-1.5 flex items-center gap-1.5">
+                              <Package size={11} className="text-primary shrink-0" />
+                              <span className="text-xs text-primary font-semibold line-clamp-1">
+                                مرتبط بـ: {product.supplement}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="p-3 flex gap-3">
+                            {/* Product image */}
+                            <div className="relative shrink-0">
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                className="w-16 h-16 object-cover rounded-lg bg-muted"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = "https://placehold.co/64x64/e8f5e9/059669?text=🌿";
+                                }}
+                              />
+                              {product.diseaseIcon && (
+                                <span className="absolute -top-1 -right-1 text-sm bg-white rounded-full shadow-sm w-5 h-5 flex items-center justify-center text-[10px]">
+                                  {product.diseaseIcon}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Product info */}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-xs text-foreground line-clamp-2 leading-tight mb-1">
+                                {product.name}
+                              </p>
+                              {product.reason && (
+                                <p className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md mb-1.5 line-clamp-1">
+                                  ✓ {product.reason}
+                                </p>
+                              )}
+                              <div className="flex items-center justify-between gap-2">
+                                {product.price && (
+                                  <span className="text-xs font-bold text-primary">{product.price} ريال</span>
+                                )}
+                                {product.diseaseName && !product.price && (
+                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                    {product.diseaseName}
+                                  </span>
+                                )}
+                                <a
+                                  href={product.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-xs font-bold text-white bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors shrink-0 group-hover:shadow-sm"
+                                >
+                                  <ShoppingBag size={11} />
+                                  اشتر الآن
+                                  <ExternalLink size={9} />
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* View all products link */}
+                    <div className="mt-2 text-center">
+                      <button
+                        onClick={onClose}
+                        className="text-xs text-primary hover:text-primary/80 font-semibold underline underline-offset-2"
+                      >
+                        عرض جميع المنتجات في المتجر ←
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -377,9 +439,10 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
           <div className="px-4 pb-3 shrink-0">
             <button
               onClick={() => sendMessage("نعم، ابدأ تصميم نظامي الغذائي بناءً على ملفي الصحي")}
-              className="w-full py-3 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors shadow-md"
+              className="w-full py-3 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors shadow-md flex items-center justify-center gap-2"
             >
-              🚀 ابدأ تصميم نظامي الغذائي الآن
+              <Sparkles size={16} />
+              ابدأ تصميم نظامي الغذائي + ترشيح المنتجات
             </button>
           </div>
         )}

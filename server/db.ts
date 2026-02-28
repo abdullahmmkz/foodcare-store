@@ -391,6 +391,47 @@ export async function upsertHealthProfile(userId: number, data: Omit<InsertHealt
   return getHealthProfile(userId);
 }
 
+// ─── Products by Keywords (for Chatbot) ─────────────────────────────────────
+
+export async function getProductsByKeywords(keywords: string[], diseaseNames?: string[], limit = 6) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Build OR conditions for keyword matching in product names
+  const keywordConditions = keywords.map(kw =>
+    like(products.name, `%${kw}%`)
+  );
+
+  // Also match by disease name if provided
+  const diseaseConditions = (diseaseNames || []).map(dn =>
+    sql`EXISTS (SELECT 1 FROM diseases d WHERE d.id = ${products.diseaseId} AND (d.nameAr LIKE ${`%${dn}%`} OR d.name LIKE ${`%${dn}%`}))`
+  );
+
+  const allConditions = [...keywordConditions, ...diseaseConditions];
+  if (allConditions.length === 0) return [];
+
+  const whereClause = or(...allConditions);
+
+  return db
+    .select({
+      id: products.id,
+      name: products.name,
+      image: products.image,
+      link: products.link,
+      diseaseId: products.diseaseId,
+      price: products.price,
+      clicks: products.clicks,
+      featured: products.featured,
+      diseaseName: diseases.nameAr,
+      diseaseIcon: diseases.icon,
+    })
+    .from(products)
+    .leftJoin(diseases, eq(products.diseaseId, diseases.id))
+    .where(whereClause)
+    .orderBy(desc(products.featured), desc(products.clicks))
+    .limit(limit);
+}
+
 export async function getAllProductsAdmin() {
   const db = await getDb();
   if (!db) return [];

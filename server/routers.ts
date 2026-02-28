@@ -13,6 +13,7 @@ import {
   getAllProductsAdmin,
   createLocalUser, getLocalUserByEmail, getLocalUserById,
   getHealthProfile, upsertHealthProfile,
+  getProductsByKeywords,
 } from "./db";
 import { invokeLLM } from "./_core/llm";
 import axios from "axios";
@@ -217,6 +218,7 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
   // ─── Health Profile ──────────────────────────────────────────────────────────
   healthProfile: router({
     get: publicProcedure
@@ -278,6 +280,7 @@ export const appRouter = router({
           disease: p.diseaseName,
           link: p.link,
           image: p.image,
+          price: p.price,
         }));
 
         // Fetch nutrition data from Open Food Facts if we have a condition
@@ -307,16 +310,17 @@ export const appRouter = router({
 
         // Build health profile context if available
         let healthProfileContext = "";
+        let userDiseases: string[] = [];
         if (input.healthProfile) {
           const hp = input.healthProfile;
-          const diseases = hp.diseases ? JSON.parse(hp.diseases) : [];
+          try { userDiseases = hp.diseases ? JSON.parse(hp.diseases) : []; } catch { userDiseases = []; }
           healthProfileContext = `
 معلومات المستخدم (مسجّلة مسبقاً لا تسأل عنها مرة أخرى):
 - العمر: ${hp.age || "غير محدد"} سنة
 - الوزن: ${hp.weight || "غير محدد"} كج
 - الطول: ${hp.height || "غير محدد"} سم
 - الجنس: ${hp.gender === "male" ? "ذكر" : hp.gender === "female" ? "أنثى" : "غير محدد"}
-- الأمراض: ${diseases.length > 0 ? diseases.join("، ") : "لا يوجد"}
+- الأمراض: ${userDiseases.length > 0 ? userDiseases.join("، ") : "لا يوجد"}
 - الهدف: ${hp.goal === "weight_loss" ? "خسارة الوزن" : hp.goal === "blood_sugar" ? "تنظيم السكر" : hp.goal === "blood_pressure" ? "تنظيم الضغط" : hp.goal === "cholesterol" ? "تحسين الكوليسترول" : "صحة عامة"}
 - مستوى النشاط: ${hp.activityLevel === "sedentary" ? "خامل" : hp.activityLevel === "light" ? "خفيف" : hp.activityLevel === "moderate" ? "متوسط" : "نشيط"}
 ${hp.allergies ? `- حساسية: ${hp.allergies}` : ""}
@@ -327,15 +331,15 @@ ${hp.allergies ? `- حساسية: ${hp.allergies}` : ""}
 
 هدفك الأساسي:
 1. صناعة نظام غذائي يومي مخصص للمستخدم بناءً على حالته الصحية
-2. ترشيح منتجات مناسبة من متجر FoodCure
+2. ترشيح مكملات غذائية ومنتجات مناسبة من متجر FoodCure مرتبطة بمكونات الخطة
 ${healthProfileContext}
 المحادثة موجّهة بهذه الخطوات:
 ${input.healthProfile ? `- لديك بيانات المستخدم مسبقاً. ابدأ مباشرة بتصميم النظام الغذائي دون أسئلة متكررة` : `- الخطوة 1 (greeting): رحّب وابدأ باسأل عن الحالة الصحية
 - الخطوة 2 (condition): بعد معرفة الحالة، اسأل عن العمر والوزن التقريبي والهدف
 - الخطوة 3 (details): بعد التفاصيل، اصنع نظام غذائي يومي كامل (فطور-غداء-عشاء-سناك)`}
-- الخطوة الأخيرة (products): رشّح 3-5 منتجات من المتجر مناسبة للحالة
+- الخطوة الأخيرة: رشّح مكملات غذائية من المتجر مرتبطة بالخطة
 
-منتجات المتجر المتاحة:
+منتجات المتجر المتاحة (استخدمها لترشيح المنتجات):
 ${JSON.stringify(productsContext, null, 2)}
 ${nutritionContext}
 
@@ -343,40 +347,29 @@ ${nutritionContext}
 - لا تقدم تشخيصاً طبياً أو أدوية
 - قدم توصيات غذائية عامة فقط
 - كن ودّياً وبسيطاً ومختصراً
-- عند ترشيح المنتجات، استخدم هذا التنسيق بالضبط:
-[PRODUCTS]
-{"products": [{"id": 1, "name": "اسم المنتج", "reason": "سبب التوصية"}]}
-[/PRODUCTS]
+- عند تصميم النظام الغذائي، حدّد المكملات الغذائية المطلوبة
+
+عند الانتهاء من تصميم النظام الغذائي الكامل، أضف قسم المنتجات بهذا التنسيق الدقيق:
+
+[MEAL_PRODUCTS]
+{
+  "supplements": [
+    {
+      "name": "اسم المكمل أو المنتج الموصى به",
+      "reason": "سبب التوصية المرتبط بالخطة الغذائية",
+      "keywords": ["كلمة1", "كلمة2"],
+      "diseaseKeywords": ["سكري", "ضغط"]
+    }
+  ]
+}
+[/MEAL_PRODUCTS]
+
+- أضف [PDF_READY] في نهاية الرد الذي يحتوي على النظام الغذائي الكامل
 - في نهاية كل رد يتضمن توصيات: أضف "⚠️ هذه التوصيات عامة وليست بديلاً عن استشارة الطبيب"
 - اكتب بالعربية دائماً`;
 
-        // Add PDF export instruction
-        const pdfInstruction = `
-عند انتهاء تصميم النظام الغذائي، أضف في نهاية ردك هذا النص بالضبط:
-[PDF_READY]
-هذا يعني أن النظام جاهز للتحميل، سيظهر زر تحميل PDF للمستخدم.
-[/PDF_READY]`;
-
-        const fullSystemPrompt = systemPrompt + `
-
-منتجات المتجر المتاحة:
-${JSON.stringify(productsContext, null, 2)}
-${nutritionContext}
-
-قواعد مهمة:
-- لا تقدم تشخيصاً طبياً أو أدوية
-- قدّم توصيات غذائية عامة فقط
-- كن ودّياً وبسيطاً ومختصراً
-- عند ترشيح المنتجات، استخدم هذا التنسيق بالضبط:
-[PRODUCTS]
-{"products": [{"id": 1, "name": "اسم المنتج", "reason": "سبب التوصية"}]}
-[/PRODUCTS]
-- في نهاية كل رد يتضمن توصيات: أضف "⚠️ هذه التوصيات عامة وليست بديلاً عن استشارة الطبيب"
-- اكتب بالعربية دائماً
-- عند انتهاء تصميم النظام الغذائي أضف [PDF_READY] في نهاية ردك`;
-
         const llmMessages = [
-          { role: "system" as const, content: fullSystemPrompt },
+          { role: "system" as const, content: systemPrompt },
           ...input.messages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
         ];
 
@@ -384,24 +377,68 @@ ${nutritionContext}
         const rawContent = response.choices[0]?.message?.content || "عذراً، حدث خطأ. حاول مرة أخرى.";
         const content = typeof rawContent === "string" ? rawContent : "عذراً، حدث خطأ. حاول مرة أخرى.";
 
-        // Extract product recommendations if present
+        // ─── Extract meal-linked product recommendations ───────────────────────
         let recommendedProducts: any[] = [];
-        const productsMatch = content.match(/\[PRODUCTS\]([\s\S]*?)\[\/PRODUCTS\]/);
-        if (productsMatch) {
+
+        // Try new MEAL_PRODUCTS format first
+        const mealProductsMatch = content.match(/\[MEAL_PRODUCTS\]([\s\S]*?)\[\/MEAL_PRODUCTS\]/);
+        if (mealProductsMatch) {
           try {
-            const parsed = JSON.parse(productsMatch[1].trim());
-            const ids = parsed.products?.map((p: any) => p.id) || [];
-            recommendedProducts = storeProducts.items
-              .filter((p: any) => ids.includes(p.id))
-              .map((p: any) => ({ ...p, reason: parsed.products.find((r: any) => r.id === p.id)?.reason }));
-          } catch (e) { /* ignore */ }
+            const parsed = JSON.parse(mealProductsMatch[1].trim());
+            const supplements: Array<{ name: string; reason: string; keywords: string[]; diseaseKeywords?: string[] }> =
+              parsed.supplements || [];
+
+            // For each supplement, search the store products by keywords
+            const seen = new Set<number>();
+            for (const supp of supplements.slice(0, 6)) {
+              const keywords = [supp.name, ...(supp.keywords || [])].filter(Boolean);
+              const diseaseKws = supp.diseaseKeywords || userDiseases;
+              const matched = await getProductsByKeywords(keywords, diseaseKws, 2);
+              for (const p of matched) {
+                if (!seen.has(p.id)) {
+                  seen.add(p.id);
+                  recommendedProducts.push({
+                    ...p,
+                    reason: supp.reason || `موصى به لخطتك الغذائية`,
+                    supplement: supp.name,
+                  });
+                }
+              }
+            }
+          } catch (e) {
+            // fallback to old PRODUCTS format
+          }
+        }
+
+        // Fallback: try old [PRODUCTS] format
+        if (recommendedProducts.length === 0) {
+          const productsMatch = content.match(/\[PRODUCTS\]([\s\S]*?)\[\/PRODUCTS\]/);
+          if (productsMatch) {
+            try {
+              const parsed = JSON.parse(productsMatch[1].trim());
+              const ids = parsed.products?.map((p: any) => p.id) || [];
+              recommendedProducts = storeProducts.items
+                .filter((p: any) => ids.includes(p.id))
+                .map((p: any) => ({ ...p, reason: parsed.products.find((r: any) => r.id === p.id)?.reason }));
+            } catch (e) { /* ignore */ }
+          }
+        }
+
+        // If still no products but we have user diseases, do a smart fallback
+        if (recommendedProducts.length === 0 && userDiseases.length > 0 && content.length > 200) {
+          const fallbackProducts = await getProductsByKeywords([], userDiseases, 4);
+          recommendedProducts = fallbackProducts.map(p => ({
+            ...p,
+            reason: `مناسب لحالتك الصحية`,
+          }));
         }
 
         // Check if PDF is ready
         const pdfReady = content.includes("[PDF_READY]");
 
-        // Clean content from blocks
+        // Clean content from all blocks
         const cleanContent = content
+          .replace(/\[MEAL_PRODUCTS\][\s\S]*?\[\/MEAL_PRODUCTS\]/g, "")
           .replace(/\[PRODUCTS\][\s\S]*?\[\/PRODUCTS\]/g, "")
           .replace(/\[PDF_READY\][\s\S]*?\[\/PDF_READY\]/g, "")
           .replace("[PDF_READY]", "")
