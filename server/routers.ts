@@ -16,7 +16,6 @@ import {
   getProductsByKeywords,
 } from "./db";
 import { invokeLLM } from "./_core/llm";
-import axios from "axios";
 
 const LOCAL_COOKIE = "fc_local_session";
 
@@ -51,7 +50,6 @@ export const appRouter = router({
 
   // ─── Local Auth (Email/Password) ─────────────────────────────────────────
   localAuth: router({
-    // Get current local session user
     me: publicProcedure.query(async ({ ctx }) => {
       const token = ctx.req.cookies?.[LOCAL_COOKIE];
       if (!token) return null;
@@ -69,15 +67,13 @@ export const appRouter = router({
 
     register: publicProcedure
       .input(z.object({
-        name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
-        email: z.string().email("البريد الإلكتروني غير صحيح"),
-        password: z.string().min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل"),
+        name: z.string().min(2),
+        email: z.string().email(),
+        password: z.string().min(8),
       }))
       .mutation(async ({ input, ctx }) => {
         const existing = await getLocalUserByEmail(input.email);
-        if (existing) {
-          throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني مستخدم بالفعل" });
-        }
+        if (existing) throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني مستخدم بالفعل" });
         const passwordHash = await bcrypt.hash(input.password, 12);
         const userId = await createLocalUser({ name: input.name, email: input.email, passwordHash });
         const token = await signLocalToken(userId, "user");
@@ -87,19 +83,12 @@ export const appRouter = router({
       }),
 
     login: publicProcedure
-      .input(z.object({
-        email: z.string().email("البريد الإلكتروني غير صحيح"),
-        password: z.string().min(1, "كلمة المرور مطلوبة"),
-      }))
+      .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
       .mutation(async ({ input, ctx }) => {
         const user = await getLocalUserByEmail(input.email);
-        if (!user) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
-        }
+        if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
         const valid = await bcrypt.compare(input.password, user.passwordHash);
-        if (!valid) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
-        }
+        if (!valid) throw new TRPCError({ code: "UNAUTHORIZED", message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
         const token = await signLocalToken(user.id, user.role);
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(LOCAL_COOKIE, token, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
@@ -113,36 +102,24 @@ export const appRouter = router({
     }),
   }),
 
-  // ─── Diseases (public read, admin write) ──────────────────────────────────
+  // ─── Diseases ─────────────────────────────────────────────────────────────
   diseases: router({
-    list: publicProcedure.query(async () => {
-      return getAllDiseases();
-    }),
+    list: publicProcedure.query(async () => getAllDiseases()),
 
     create: adminProcedure
       .input(z.object({ name: z.string().min(1), nameAr: z.string().min(1), icon: z.string().optional() }))
-      .mutation(async ({ input }) => {
-        await createDisease(input);
-        return { success: true };
-      }),
+      .mutation(async ({ input }) => { await createDisease(input); return { success: true }; }),
 
     update: adminProcedure
-      .input(z.object({ id: z.number(), name: z.string().min(1).optional(), nameAr: z.string().min(1).optional(), icon: z.string().optional() }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        await updateDisease(id, data);
-        return { success: true };
-      }),
+      .input(z.object({ id: z.number(), name: z.string().optional(), nameAr: z.string().optional(), icon: z.string().optional() }))
+      .mutation(async ({ input }) => { const { id, ...data } = input; await updateDisease(id, data); return { success: true }; }),
 
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await deleteDisease(input.id);
-        return { success: true };
-      }),
+      .mutation(async ({ input }) => { await deleteDisease(input.id); return { success: true }; }),
   }),
 
-  // ─── Products (public read, admin write) ──────────────────────────────────
+  // ─── Products ─────────────────────────────────────────────────────────────
   products: router({
     list: publicProcedure
       .input(z.object({
@@ -152,9 +129,7 @@ export const appRouter = router({
         limit: z.number().min(1).max(50).default(12),
         offset: z.number().min(0).default(0),
       }))
-      .query(async ({ input }) => {
-        return getProducts(input);
-      }),
+      .query(async ({ input }) => getProducts(input)),
 
     byId: publicProcedure
       .input(z.object({ id: z.number() }))
@@ -166,66 +141,39 @@ export const appRouter = router({
 
     related: publicProcedure
       .input(z.object({ diseaseId: z.number(), excludeId: z.number(), limit: z.number().default(4) }))
-      .query(async ({ input }) => {
-        return getRelatedProducts(input.diseaseId, input.excludeId, input.limit);
-      }),
+      .query(async ({ input }) => getRelatedProducts(input.diseaseId, input.excludeId, input.limit)),
 
     trackClick: publicProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await incrementProductClicks(input.id);
-        return { success: true };
-      }),
+      .mutation(async ({ input }) => { await incrementProductClicks(input.id); return { success: true }; }),
 
-    adminList: adminProcedure.query(async () => {
-      return getAllProductsAdmin();
-    }),
+    adminList: adminProcedure.query(async () => getAllProductsAdmin()),
 
     create: adminProcedure
       .input(z.object({
-        name: z.string().min(1),
-        image: z.string().url(),
-        link: z.string().url(),
-        diseaseId: z.number(),
-        price: z.string().optional(),
-        featured: z.number().optional(),
+        name: z.string().min(1), image: z.string().url(), link: z.string().url(),
+        diseaseId: z.number(), price: z.string().optional(), featured: z.number().optional(),
       }))
-      .mutation(async ({ input }) => {
-        await createProduct({ ...input, clicks: 0 });
-        return { success: true };
-      }),
+      .mutation(async ({ input }) => { await createProduct({ ...input, clicks: 0 }); return { success: true }; }),
 
     update: adminProcedure
       .input(z.object({
-        id: z.number(),
-        name: z.string().min(1).optional(),
-        image: z.string().url().optional(),
-        link: z.string().url().optional(),
-        diseaseId: z.number().optional(),
-        price: z.string().optional(),
-        featured: z.number().optional(),
+        id: z.number(), name: z.string().optional(), image: z.string().url().optional(),
+        link: z.string().url().optional(), diseaseId: z.number().optional(),
+        price: z.string().optional(), featured: z.number().optional(),
       }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        await updateProduct(id, data);
-        return { success: true };
-      }),
+      .mutation(async ({ input }) => { const { id, ...data } = input; await updateProduct(id, data); return { success: true }; }),
 
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await deleteProduct(input.id);
-        return { success: true };
-      }),
+      .mutation(async ({ input }) => { await deleteProduct(input.id); return { success: true }; }),
   }),
 
-  // ─── Health Profile ──────────────────────────────────────────────────────────
+  // ─── Health Profile ───────────────────────────────────────────────────────
   healthProfile: router({
     get: publicProcedure
       .input(z.object({ userId: z.number() }))
-      .query(async ({ input }) => {
-        return getHealthProfile(input.userId);
-      }),
+      .query(async ({ input }) => getHealthProfile(input.userId)),
 
     save: publicProcedure
       .input(z.object({
@@ -234,7 +182,7 @@ export const appRouter = router({
         weight: z.number().min(20).max(300).optional(),
         height: z.number().min(100).max(250).optional(),
         gender: z.enum(["male", "female"]).optional(),
-        diseases: z.string().optional(), // JSON array
+        diseases: z.string().optional(),
         goal: z.enum(["weight_loss", "blood_sugar", "blood_pressure", "cholesterol", "general_health"]).optional(),
         activityLevel: z.enum(["sedentary", "light", "moderate", "active"]).optional(),
         allergies: z.string().optional(),
@@ -246,7 +194,7 @@ export const appRouter = router({
       }),
   }),
 
-  // ─── ChatBot ─────────────────────────────────────────────────────────────
+  // ─── ChatBot: Symptom Analyzer ────────────────────────────────────────────
   chatbot: router({
     chat: publicProcedure
       .input(z.object({
@@ -254,12 +202,9 @@ export const appRouter = router({
           role: z.enum(["user", "assistant"]),
           content: z.string(),
         })),
-        step: z.enum(["greeting", "condition", "details", "plan", "products"]).default("greeting"),
-        condition: z.string().optional(),
-        age: z.string().optional(),
-        weight: z.string().optional(),
-        goal: z.string().optional(),
-        // Health profile from DB (pre-filled)
+        // Collected symptoms so far (frontend tracks them)
+        collectedSymptoms: z.array(z.string()).default([]),
+        // Health profile from DB
         healthProfile: z.object({
           age: z.number().nullable().optional(),
           weight: z.number().nullable().optional(),
@@ -272,101 +217,93 @@ export const appRouter = router({
         }).optional(),
       }))
       .mutation(async ({ input }) => {
-        // Fetch all products from the store to use as context
+        // Fetch store products for recommendation context
         const storeProducts = await getProducts({ limit: 100, offset: 0 });
         const productsContext = storeProducts.items.map((p: any) => ({
           id: p.id,
           name: p.name,
           disease: p.diseaseName,
-          link: p.link,
-          image: p.image,
           price: p.price,
         }));
 
-        // Fetch nutrition data from Open Food Facts if we have a condition
-        let nutritionContext = "";
-        if (input.condition) {
-          try {
-            const searchTerm = input.condition === "سكري" ? "diabetic" :
-              input.condition === "ضغط" ? "low sodium" :
-              input.condition === "كوليسترول" ? "cholesterol" :
-              input.condition === "سمنة" ? "low calorie" : "healthy";
-            const offRes = await axios.get(
-              `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${searchTerm}&search_simple=1&action=process&json=1&page_size=5&fields=product_name,nutriments,categories_tags`,
-              { timeout: 5000 }
-            );
-            if (offRes.data?.products?.length > 0) {
-              const foods = offRes.data.products
-                .filter((p: any) => p.product_name)
-                .slice(0, 5)
-                .map((p: any) => p.product_name)
-                .join("، ");
-              nutritionContext = `\nأمثلة أطعمة مناسبة من قاعدة بيانات Open Food Facts: ${foods}`;
-            }
-          } catch (e) {
-            // Ignore API errors, continue without nutrition data
-          }
-        }
-
-        // Build health profile context if available
-        let healthProfileContext = "";
+        // Build health profile context
+        let healthCtx = "";
         let userDiseases: string[] = [];
         if (input.healthProfile) {
           const hp = input.healthProfile;
           try { userDiseases = hp.diseases ? JSON.parse(hp.diseases) : []; } catch { userDiseases = []; }
-          healthProfileContext = `
-معلومات المستخدم (مسجّلة مسبقاً لا تسأل عنها مرة أخرى):
-- العمر: ${hp.age || "غير محدد"} سنة
-- الوزن: ${hp.weight || "غير محدد"} كج
-- الطول: ${hp.height || "غير محدد"} سم
-- الجنس: ${hp.gender === "male" ? "ذكر" : hp.gender === "female" ? "أنثى" : "غير محدد"}
-- الأمراض: ${userDiseases.length > 0 ? userDiseases.join("، ") : "لا يوجد"}
-- الهدف: ${hp.goal === "weight_loss" ? "خسارة الوزن" : hp.goal === "blood_sugar" ? "تنظيم السكر" : hp.goal === "blood_pressure" ? "تنظيم الضغط" : hp.goal === "cholesterol" ? "تحسين الكوليسترول" : "صحة عامة"}
-- مستوى النشاط: ${hp.activityLevel === "sedentary" ? "خامل" : hp.activityLevel === "light" ? "خفيف" : hp.activityLevel === "moderate" ? "متوسط" : "نشيط"}
-${hp.allergies ? `- حساسية: ${hp.allergies}` : ""}
+          const genderLabel = hp.gender === "male" ? "ذكر" : hp.gender === "female" ? "أنثى" : "غير محدد";
+          const goalMap: Record<string, string> = {
+            weight_loss: "خسارة الوزن", blood_sugar: "تنظيم السكر",
+            blood_pressure: "تنظيم الضغط", cholesterol: "تحسين الكوليسترول", general_health: "صحة عامة",
+          };
+          healthCtx = `
+[معلومات المستخدم المسجّلة — لا تسأل عنها مجدداً]
+العمر: ${hp.age ?? "غير محدد"} سنة | الجنس: ${genderLabel} | الوزن: ${hp.weight ?? "غير محدد"} كج | الطول: ${hp.height ?? "غير محدد"} سم
+الأمراض المعروفة: ${userDiseases.length > 0 ? userDiseases.join("، ") : "لا يوجد"}
+الهدف: ${hp.goal ? (goalMap[hp.goal] ?? hp.goal) : "غير محدد"}
+${hp.allergies ? `الحساسية: ${hp.allergies}` : ""}
 `;
         }
 
-        const systemPrompt = `أنت مساعد تغذية ذكي لموقع FoodCure، متجر صحي يبيع مكملات غذائية ومنتجات صحية.
+        const symptomsCtx = input.collectedSymptoms.length > 0
+          ? `\n[الأعراض المُجمَّعة حتى الآن: ${input.collectedSymptoms.join("، ")}]\n`
+          : "";
 
-هدفك الأساسي:
-1. صناعة نظام غذائي يومي مخصص للمستخدم بناءً على حالته الصحية
-2. ترشيح مكملات غذائية ومنتجات مناسبة من متجر FoodCure مرتبطة بمكونات الخطة
-${healthProfileContext}
-المحادثة موجّهة بهذه الخطوات:
-${input.healthProfile ? `- لديك بيانات المستخدم مسبقاً. ابدأ مباشرة بتصميم النظام الغذائي دون أسئلة متكررة` : `- الخطوة 1 (greeting): رحّب وابدأ باسأل عن الحالة الصحية
-- الخطوة 2 (condition): بعد معرفة الحالة، اسأل عن العمر والوزن التقريبي والهدف
-- الخطوة 3 (details): بعد التفاصيل، اصنع نظام غذائي يومي كامل (فطور-غداء-عشاء-سناك)`}
-- الخطوة الأخيرة: رشّح مكملات غذائية من المتجر مرتبطة بالخطة
+        // ── SYSTEM PROMPT: Symptom Analyzer ──────────────────────────────────
+        const systemPrompt = `أنت "د. فود" — محلل أعراض ذكي لموقع FoodCure، متجر صحي متخصص في المكملات الغذائية والمنتجات الصحية الطبيعية.
 
-منتجات المتجر المتاحة (استخدمها لترشيح المنتجات):
+دورك الأساسي:
+أنت لست طبيباً ولا تُشخِّص الأمراض. أنت تستمع للأعراض التي يصفها المستخدم، تحلّلها، تحدد السبب الغذائي أو النقص الغذائي المحتمل، ثم ترشّح منتجات من متجر FoodCure قد تساعد.
+${healthCtx}
+${symptomsCtx}
+منهجية المحادثة:
+1. **استقبال الأعراض**: اسأل المستخدم عن أعراضه بشكل طبيعي ومتعاطف. اسأل سؤالاً واحداً في كل مرة.
+2. **التعمق**: إذا ذكر عرضاً واحداً، اسأل عن تفاصيل (متى بدأ؟ مستمر أم متقطع؟ مصحوب بأعراض أخرى؟)
+3. **التحليل**: بعد جمع 2-3 أعراض، حلّل السبب الغذائي المحتمل (نقص فيتامين، نقص معدن، جفاف، إجهاد...)
+4. **الترشيح**: رشّح منتجات من المتجر مناسبة للحالة
+
+أمثلة على ربط الأعراض بالأسباب الغذائية:
+- دوخة + إرهاق → نقص حديد / نقص فيتامين B12 / انخفاض ضغط
+- تعب مستمر + خمول → نقص فيتامين D / نقص مغنيسيوم / قصور درقي
+- صداع متكرر → جفاف / نقص مغنيسيوم / ارتفاع ضغط
+- ضعف تركيز + نسيان → نقص أوميغا 3 / نقص B12 / قلة نوم
+- ألم مفاصل → نقص كالسيوم / نقص فيتامين D / التهاب
+- مشاكل هضم → نقص بروبيوتيك / حساسية غذائية
+- شعر وأظافر هشة → نقص بيوتين / نقص زنك / نقص بروتين
+- كثرة التبول + عطش → ارتفاع سكر / جفاف
+- خفقان قلب → نقص مغنيسيوم / نقص بوتاسيوم / قلق
+
+قواعد صارمة:
+- لا تُشخِّص أمراضاً ولا تصف أدوية أبداً
+- إذا كانت الأعراض خطيرة (ألم صدر، ضيق تنفس، إغماء) → أحِل فوراً لطبيب
+- اذكر دائماً أن توصياتك تكميلية وليست بديلاً طبياً
+- كن دافئاً ومتعاطفاً وواضحاً
+- اكتب بالعربية دائماً
+
+منتجات المتجر المتاحة:
 ${JSON.stringify(productsContext, null, 2)}
-${nutritionContext}
 
-قواعد مهمة:
-- لا تقدم تشخيصاً طبياً أو أدوية
-- قدم توصيات غذائية عامة فقط
-- كن ودّياً وبسيطاً ومختصراً
-- عند تصميم النظام الغذائي، حدّد المكملات الغذائية المطلوبة
+عندما تكون جاهزاً لترشيح المنتجات (بعد تحليل الأعراض)، أضف هذا الكتلة في نهاية ردك:
 
-عند الانتهاء من تصميم النظام الغذائي الكامل، أضف قسم المنتجات بهذا التنسيق الدقيق:
-
-[MEAL_PRODUCTS]
+[SYMPTOM_ANALYSIS]
 {
-  "supplements": [
+  "symptoms": ["عرض1", "عرض2"],
+  "possibleCauses": ["السبب المحتمل 1", "السبب المحتمل 2"],
+  "severity": "low|medium|high",
+  "recommendations": [
     {
-      "name": "اسم المكمل أو المنتج الموصى به",
-      "reason": "سبب التوصية المرتبط بالخطة الغذائية",
-      "keywords": ["كلمة1", "كلمة2"],
-      "diseaseKeywords": ["سكري", "ضغط"]
+      "name": "اسم المكمل أو المنتج",
+      "reason": "لماذا هذا المنتج مناسب لهذه الأعراض",
+      "keywords": ["كلمة مفتاحية1", "كلمة2"],
+      "diseaseKeywords": ["مرض مرتبط"]
     }
   ]
 }
-[/MEAL_PRODUCTS]
+[/SYMPTOM_ANALYSIS]
 
-- أضف [PDF_READY] في نهاية الرد الذي يحتوي على النظام الغذائي الكامل
-- في نهاية كل رد يتضمن توصيات: أضف "⚠️ هذه التوصيات عامة وليست بديلاً عن استشارة الطبيب"
-- اكتب بالعربية دائماً`;
+- severity: low = أعراض خفيفة، medium = تحتاج متابعة، high = راجع طبيباً فوراً
+- أضف [REFER_DOCTOR] إذا كانت الأعراض تستدعي زيارة طبيب عاجلة`;
 
         const llmMessages = [
           { role: "system" as const, content: systemPrompt },
@@ -377,77 +314,69 @@ ${nutritionContext}
         const rawContent = response.choices[0]?.message?.content || "عذراً، حدث خطأ. حاول مرة أخرى.";
         const content = typeof rawContent === "string" ? rawContent : "عذراً، حدث خطأ. حاول مرة أخرى.";
 
-        // ─── Extract meal-linked product recommendations ───────────────────────
+        // ── Parse SYMPTOM_ANALYSIS block ──────────────────────────────────────
         let recommendedProducts: any[] = [];
+        let analysisData: {
+          symptoms: string[];
+          possibleCauses: string[];
+          severity: "low" | "medium" | "high";
+        } | null = null;
 
-        // Try new MEAL_PRODUCTS format first
-        const mealProductsMatch = content.match(/\[MEAL_PRODUCTS\]([\s\S]*?)\[\/MEAL_PRODUCTS\]/);
-        if (mealProductsMatch) {
+        const analysisMatch = content.match(/\[SYMPTOM_ANALYSIS\]([\s\S]*?)\[\/SYMPTOM_ANALYSIS\]/);
+        if (analysisMatch) {
           try {
-            const parsed = JSON.parse(mealProductsMatch[1].trim());
-            const supplements: Array<{ name: string; reason: string; keywords: string[]; diseaseKeywords?: string[] }> =
-              parsed.supplements || [];
+            const parsed = JSON.parse(analysisMatch[1].trim());
+            analysisData = {
+              symptoms: parsed.symptoms || [],
+              possibleCauses: parsed.possibleCauses || [],
+              severity: parsed.severity || "low",
+            };
 
-            // For each supplement, search the store products by keywords
+            const recommendations: Array<{
+              name: string; reason: string; keywords: string[]; diseaseKeywords?: string[];
+            }> = parsed.recommendations || [];
+
             const seen = new Set<number>();
-            for (const supp of supplements.slice(0, 6)) {
-              const keywords = [supp.name, ...(supp.keywords || [])].filter(Boolean);
-              const diseaseKws = supp.diseaseKeywords || userDiseases;
+            for (const rec of recommendations.slice(0, 6)) {
+              const keywords = [rec.name, ...(rec.keywords || [])].filter(Boolean);
+              const diseaseKws = rec.diseaseKeywords || userDiseases;
               const matched = await getProductsByKeywords(keywords, diseaseKws, 2);
               for (const p of matched) {
                 if (!seen.has(p.id)) {
                   seen.add(p.id);
                   recommendedProducts.push({
                     ...p,
-                    reason: supp.reason || `موصى به لخطتك الغذائية`,
-                    supplement: supp.name,
+                    reason: rec.reason || "موصى به لأعراضك",
+                    supplement: rec.name,
                   });
                 }
               }
             }
-          } catch (e) {
-            // fallback to old PRODUCTS format
-          }
+          } catch { /* ignore parse errors */ }
         }
 
-        // Fallback: try old [PRODUCTS] format
-        if (recommendedProducts.length === 0) {
-          const productsMatch = content.match(/\[PRODUCTS\]([\s\S]*?)\[\/PRODUCTS\]/);
-          if (productsMatch) {
-            try {
-              const parsed = JSON.parse(productsMatch[1].trim());
-              const ids = parsed.products?.map((p: any) => p.id) || [];
-              recommendedProducts = storeProducts.items
-                .filter((p: any) => ids.includes(p.id))
-                .map((p: any) => ({ ...p, reason: parsed.products.find((r: any) => r.id === p.id)?.reason }));
-            } catch (e) { /* ignore */ }
-          }
-        }
-
-        // If still no products but we have user diseases, do a smart fallback
-        if (recommendedProducts.length === 0 && userDiseases.length > 0 && content.length > 200) {
-          const fallbackProducts = await getProductsByKeywords([], userDiseases, 4);
-          recommendedProducts = fallbackProducts.map(p => ({
+        // Fallback: if analysis found but no products matched, search by diseases
+        if (analysisData && recommendedProducts.length === 0 && userDiseases.length > 0) {
+          const fallback = await getProductsByKeywords([], userDiseases, 4);
+          recommendedProducts = fallback.map(p => ({
             ...p,
-            reason: `مناسب لحالتك الصحية`,
+            reason: "مناسب لحالتك الصحية",
           }));
         }
 
-        // Check if PDF is ready
-        const pdfReady = content.includes("[PDF_READY]");
+        const referDoctor = content.includes("[REFER_DOCTOR]");
 
-        // Clean content from all blocks
+        // Clean content
         const cleanContent = content
-          .replace(/\[MEAL_PRODUCTS\][\s\S]*?\[\/MEAL_PRODUCTS\]/g, "")
-          .replace(/\[PRODUCTS\][\s\S]*?\[\/PRODUCTS\]/g, "")
-          .replace(/\[PDF_READY\][\s\S]*?\[\/PDF_READY\]/g, "")
-          .replace("[PDF_READY]", "")
+          .replace(/\[SYMPTOM_ANALYSIS\][\s\S]*?\[\/SYMPTOM_ANALYSIS\]/g, "")
+          .replace(/\[REFER_DOCTOR\]/g, "")
           .trim();
 
         return {
           message: cleanContent,
           recommendedProducts,
-          pdfReady,
+          analysisData,
+          referDoctor,
         };
       }),
   }),
