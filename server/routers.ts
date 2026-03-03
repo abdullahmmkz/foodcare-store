@@ -16,6 +16,7 @@ import {
   getProductsByKeywords,
 } from "./db";
 import { invokeLLM } from "./_core/llm";
+import { storagePut } from "./storage";
 
 const LOCAL_COOKIE = "fc_local_session";
 
@@ -191,6 +192,161 @@ export const appRouter = router({
         const { userId, ...data } = input;
         await upsertHealthProfile(userId, data);
         return { success: true };
+      }),
+  }),
+
+  // ─── Blood Test Image Analysis ──────────────────────────────────────────────
+  labAnalysis: router({
+    // Upload image to S3 and return URL
+    uploadImage: publicProcedure
+      .input(z.object({
+        base64: z.string(),          // base64-encoded image data
+        mimeType: z.string().default("image/jpeg"),
+        fileName: z.string().default("lab-result.jpg"),
+      }))
+      .mutation(async ({ input }) => {
+        // Validate size (max 10MB base64 ≈ 7.5MB raw)
+        if (input.base64.length > 14_000_000) {
+          throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "حجم الصورة كبير جداً (الحد الأقصى 10MB)" });
+        }
+        const buffer = Buffer.from(input.base64, "base64");
+        const suffix = Math.random().toString(36).slice(2, 8);
+        const key = `lab-results/${Date.now()}-${suffix}-${input.fileName}`;
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        return { url, key };
+      }),
+
+    // Analyze blood test image with Vision LLM
+    analyzeImage: publicProcedure
+      .input(z.object({
+        imageUrl: z.string().url(),
+        healthProfile: z.object({
+          age: z.number().nullable().optional(),
+          weight: z.number().nullable().optional(),
+          gender: z.string().nullable().optional(),
+          diseases: z.string().nullable().optional(),
+          allergies: z.string().nullable().optional(),
+        }).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Build health context
+        let healthCtx = "";
+        let userDiseases: string[] = [];
+        if (input.healthProfile) {
+          const hp = input.healthProfile;
+          try { userDiseases = hp.diseases ? JSON.parse(hp.diseases) : []; } catch { userDiseases = []; }
+          healthCtx = `معلومات المريض: العمر ${hp.age ?? "غير محدد"} | الجنس ${hp.gender === "male" ? "ذكر" : hp.gender === "female" ? "أنثى" : "غير محدد"} | الوزن ${hp.weight ?? "غير محدد"} كج | الأمراض المعروفة: ${userDiseases.join("، ") || "لا يوجد"}`;
+        }
+
+        // Fetch store products for recommendations
+        const storeProducts = await getProducts({ limit: 100, offset: 0 });
+        const productsCtx = storeProducts.items.map((p: any) => ({
+          id: p.id, name: p.name, disease: p.diseaseName, price: p.price,
+        }));
+
+        const systemPrompt = `أنت "د. فود" — محلل فحوصات دم متخصص لموقع FoodCure.
+
+مهمتك:
+1. اقرأ نتيجة فحص الدم في الصورة بدقة
+2. استخرج القيم المختبرية المذكورة (هيموغلوبين، سكر، كوليسترول، فيتامين D، حديد، B12، TSH، إلخ)
+3. حدد القيم التي خارج النطاق الطبيعي (مرتفعة أو منخفضة)
+4. فسّر النتائج بلغة بسيطة
+5. رشّح مكملات غذائية من متجر FoodCure مناسبة للقيم غير الطبيعية
+
+${healthCtx}
+
+قواعد:
+- لا تُشخِّص أمراضاً ولا تصف أدوية
+- إذا كانت القيم طبيعية كلها، قل ذلك بوضوح
+- إذا كانت الصورة غير واضحة أو ليست فحص دم، أخبر المستخدم
+- اكتب بالعربية دائماً
+
+منتجات المتجر المتاحة:
+${JSON.stringify(productsCtx, null, 2)}
+
+أضف هذه الكتلة في نهاية ردك:
+
+[LAB_ANALYSIS]
+{
+  "extractedValues": [
+    { "name": "اسم المؤشر", "value": "القيمة", "unit": "الوحدة", "status": "normal|low|high", "normalRange": "النطاق الطبيعي" }
+  ],
+  "abnormalValues": ["اسم المؤشر غير الطبيعي"],
+  "overallStatus": "normal|needs_attention|critical",
+  "recommendations": [
+    { "name": "اسم المكمل", "reason": "السبب", "keywords": ["كلمة1"], "diseaseKeywords": [] }
+  ]
+}
+[/LAB_ANALYSIS]
+
+أضف [REFER_DOCTOR] إذا كانت النتائج تستدعي مراجعة طبيب فوراً.`;
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "حلّل نتيجة فحص الدم في هذه الصورة وقدّم توصياتك." },
+                { type: "image_url", image_url: { url: input.imageUrl, detail: "high" } },
+              ],
+            },
+          ],
+        });
+
+        const rawContent = response.choices[0]?.message?.content || "";
+        const content = typeof rawContent === "string" ? rawContent : "";
+
+        // Parse LAB_ANALYSIS block
+        let extractedValues: Array<{ name: string; value: string; unit: string; status: "normal" | "low" | "high"; normalRange: string }> = [];
+        let abnormalValues: string[] = [];
+        let overallStatus: "normal" | "needs_attention" | "critical" = "normal";
+        let recommendedProducts: any[] = [];
+
+        const labMatch = content.match(/\[LAB_ANALYSIS\]([\s\S]*?)\[\/LAB_ANALYSIS\]/);
+        if (labMatch) {
+          try {
+            const parsed = JSON.parse(labMatch[1].trim());
+            extractedValues = (parsed.extractedValues || []).map((v: any) => ({
+              name: v.name || "",
+              value: v.value || "",
+              unit: v.unit || "",
+              status: (["normal", "low", "high"].includes(v.status) ? v.status : "normal") as "normal" | "low" | "high",
+              normalRange: v.normalRange || "",
+            }));
+            abnormalValues = parsed.abnormalValues || [];
+            overallStatus = parsed.overallStatus || "normal";
+
+            const recs: Array<{ name: string; reason: string; keywords: string[]; diseaseKeywords?: string[] }> =
+              parsed.recommendations || [];
+            const seen = new Set<number>();
+            for (const rec of recs.slice(0, 6)) {
+              const keywords = [rec.name, ...(rec.keywords || [])].filter(Boolean);
+              const matched = await getProductsByKeywords(keywords, rec.diseaseKeywords || userDiseases, 2);
+              for (const p of matched) {
+                if (!seen.has(p.id)) {
+                  seen.add(p.id);
+                  recommendedProducts.push({ ...p, reason: rec.reason, supplement: rec.name });
+                }
+              }
+            }
+          } catch { /* ignore */ }
+        }
+
+        const referDoctor = content.includes("[REFER_DOCTOR]");
+        const cleanContent = content
+          .replace(/\[LAB_ANALYSIS\][\s\S]*?\[\/LAB_ANALYSIS\]/g, "")
+          .replace(/\[REFER_DOCTOR\]/g, "")
+          .trim();
+
+        return {
+          message: cleanContent,
+          extractedValues,
+          abnormalValues,
+          overallStatus,
+          recommendedProducts,
+          referDoctor,
+        };
       }),
   }),
 
