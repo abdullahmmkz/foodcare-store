@@ -104,7 +104,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95 text-base"
               >
                 <ShoppingCart size={18} />
-                اشتر الآن
+                عرض المنتج
               </button>
               <button
                 onClick={handleBuy}

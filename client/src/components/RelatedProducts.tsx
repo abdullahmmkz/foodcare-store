@@ -67,7 +67,7 @@ export default function RelatedProducts({ diseaseId, excludeId, onQuickView }: R
                   className="w-full bg-primary text-primary-foreground text-xs font-bold py-1.5 rounded-lg flex items-center justify-center gap-1 hover:bg-primary/90 transition-colors"
                 >
                   <ShoppingCart size={11} />
-                  اشتر الآن
+                  عرض المنتج
                 </button>
               </div>
             </div>

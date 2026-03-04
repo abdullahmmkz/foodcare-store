@@ -103,7 +103,7 @@ export default function ProductCard({ product, onQuickView, index = 0 }: Product
             className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold py-2.5 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md active:scale-95"
           >
             <ShoppingCart size={15} />
-            اشتر الآن
+            عرض المنتج
           </button>
         </div>
       </div>

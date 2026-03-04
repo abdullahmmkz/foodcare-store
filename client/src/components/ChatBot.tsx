@@ -390,7 +390,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs font-bold text-white bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors shrink-0"
                 >
-                  <ShoppingBag size={11} />اشتر الآن<ExternalLink size={9} />
+                  <ExternalLink size={11} />عرض المنتج
                 </a>
               </div>
             </div>
