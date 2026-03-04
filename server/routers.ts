@@ -68,9 +68,9 @@ export const appRouter = router({
 
     register: publicProcedure
       .input(z.object({
-        name: z.string().min(2),
-        email: z.string().email(),
-        password: z.string().min(8),
+        name: z.string().min(1, "الاسم مطلوب").max(100, "الاسم طويل جداً"),
+        email: z.string().email("بريد إلكتروني غير صحيح"),
+        password: z.string().min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل"),
       }))
       .mutation(async ({ input, ctx }) => {
         const existing = await getLocalUserByEmail(input.email);

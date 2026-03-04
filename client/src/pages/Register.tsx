@@ -24,7 +24,13 @@ export default function Register() {
       navigate("/");
     },
     onError: (err) => {
-      toast.error(err.message || "حدث خطأ أثناء إنشاء الحساب");
+      // Extract Arabic message from zod validation errors or use server message
+      let msg = err.message || "حدث خطأ أثناء إنشاء الحساب";
+      try {
+        const parsed = JSON.parse(msg);
+        if (Array.isArray(parsed) && parsed[0]?.message) msg = parsed[0].message;
+      } catch { /* use msg as-is */ }
+      toast.error(msg);
     },
   });
 
