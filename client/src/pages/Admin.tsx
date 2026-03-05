@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   Leaf, LayoutDashboard, Package, Tag, TrendingUp, Plus, Pencil, Trash2,
   X, Check, AlertCircle, LogOut, ChevronRight, BarChart3, Eye, ShoppingCart, Home
 } from "lucide-react";
-import { Link } from "wouter";
-import { getLoginUrl } from "@/const";
+import { Link, useLocation } from "wouter";
 
 type AdminTab = "dashboard" | "diseases" | "products";
 
@@ -140,14 +138,25 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
 
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function Admin() {
-  const { user, isAuthenticated, loading, logout } = useAuth();
+  const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
+  const { data: localUser, isLoading: localUserLoading } = trpc.localAuth.me.useQuery();
+  const localLogout = trpc.localAuth.logout.useMutation({
+    onSuccess: async () => {
+      await utils.localAuth.me.invalidate();
+      toast.success("تم تسجيل الخروج");
+      navigate("/");
+    },
+  });
+  const isAuthenticated = !!localUser;
+  const loading = localUserLoading;
+  const user = localUser;
+  const logout = () => localLogout.mutate();
   const [tab, setTab] = useState<AdminTab>("dashboard");
   const [showDiseaseForm, setShowDiseaseForm] = useState(false);
   const [editingDisease, setEditingDisease] = useState<{ id: number; name: string; nameAr: string; icon?: string | null } | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<{ id: number; name: string; image: string; link: string; diseaseId: number; price?: string | null; featured?: number } | null>(null);
-
-  const utils = trpc.useUtils();
 
   const { data: diseases, isLoading: diseasesLoading } = trpc.diseases.list.useQuery();
   const { data: products, isLoading: productsLoading } = trpc.products.adminList.useQuery(
@@ -201,11 +210,11 @@ export default function Admin() {
           </div>
           <h2 className="text-xl font-bold text-foreground mb-2">تسجيل الدخول مطلوب</h2>
           <p className="text-muted-foreground text-sm mb-6">يجب تسجيل الدخول للوصول إلى لوحة الأدمن</p>
-          <a href={getLoginUrl()}>
+          <Link href="/login">
             <button className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors">
               تسجيل الدخول
             </button>
-          </a>
+          </Link>
         </div>
       </div>
     );
