@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, MessageCircle, LogIn, Shield, LogOut, UserCircle, Bot } from "lucide-react";
-import ChatBot from "@/components/ChatBot";
+import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, MessageCircle, LogIn, Shield, LogOut, UserCircle } from "lucide-react";
 import HealthProfileModal from "@/components/HealthProfileModal";
 import { trpc } from "@/lib/trpc";
 import ProductCard, { type ProductItem } from "@/components/ProductCard";
@@ -34,7 +33,6 @@ export default function Home() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedDiseaseId, setSelectedDiseaseId] = useState<number | undefined>(undefined);
   const [sort] = useState<SortType>("newest");
-  const [showChatBot, setShowChatBot] = useState(false);
   const [showHealthProfile, setShowHealthProfile] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<ProductItem | null>(null);
 
@@ -296,15 +294,7 @@ export default function Home() {
             )}
           </div>
 
-          {/* ChatBot Button */}
-          <button
-            onClick={() => setShowChatBot(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md hover:bg-primary/90 transition-all duration-200 animate-pulse-slow"
-          >
-            <Bot size={16} />
-            <span className="hidden sm:inline">المساعد الذكي</span>
-            <span className="sm:hidden">AI</span>
-          </button>
+
         </div>
 
         {/* Products Grid */}
@@ -353,16 +343,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* ─── ChatBot ──────────────────────────────────────────────────────── */}
-      {showChatBot && (
-        <ChatBot
-          onClose={() => setShowChatBot(false)}
-          healthProfile={healthProfile}
-          userName={user?.name || undefined}
-        />
-      )}
-
-      {/* ─── Health Profile Modal ─────────────────────────────────────────── */}
+      {/* ─── Health Profile Modal ─────────────────────────────────────────────── */}
       {showHealthProfile && user && (
         <HealthProfileModal
           userId={user.id}
