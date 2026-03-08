@@ -42,7 +42,7 @@ export default function Home() {
     { enabled: isAuthenticated && !!user?.id }
   );
 
-  // Auto-show health profile modal after login if no profile exists
+  // Auto-show health profile modal after first login if no profile exists
   useEffect(() => {
     if (isAuthenticated && user?.id && healthProfile === null) {
       const timer = setTimeout(() => setShowHealthProfile(true), 800);
@@ -178,21 +178,13 @@ export default function Home() {
                     </div>
                     <span className="hidden md:block text-sm font-semibold text-foreground max-w-[100px] truncate">{user?.name}</span>
                   </div>
-                  <button
-                    onClick={() => setShowHealthProfile(true)}
-                    className="flex items-center gap-1.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors px-2 py-1.5 rounded-lg border border-primary/20"
-                    title="ملفي الصحي"
-                  >
-                    <UserCircle size={15} />
-                    <span className="hidden sm:inline text-xs">ملفي</span>
-                  </button>
-                  <Link href="/change-password">
+                  <Link href="/profile">
                     <button
-                      className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors px-2 py-1.5 rounded-lg hover:bg-primary/10"
-                      title="تغيير كلمة المرور"
+                      className="flex items-center gap-1.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors px-2 py-1.5 rounded-lg border border-primary/20"
+                      title="لنتعرف عليك"
                     >
-                      <Shield size={15} />
-                      <span className="hidden sm:inline text-xs">كلمة المرور</span>
+                      <UserCircle size={15} />
+                      <span className="hidden sm:inline text-xs">لنتعرف عليك</span>
                     </button>
                   </Link>
                   <button
