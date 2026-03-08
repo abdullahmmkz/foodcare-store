@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, MessageCircle, LogIn, Shield, LogOut, UserCircle } from "lucide-react";
+import ProfileDropdown from "@/components/ProfileDropdown";
 import HealthProfileModal from "@/components/HealthProfileModal";
 import { trpc } from "@/lib/trpc";
 import ProductCard, { type ProductItem } from "@/components/ProductCard";
@@ -178,15 +179,7 @@ export default function Home() {
                     </div>
                     <span className="hidden md:block text-sm font-semibold text-foreground max-w-[100px] truncate">{user?.name}</span>
                   </div>
-                  <Link href="/profile">
-                    <button
-                      className="flex items-center gap-1.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors px-2 py-1.5 rounded-lg border border-primary/20"
-                      title="ملقي"
-                    >
-                      <UserCircle size={15} />
-                      <span className="hidden sm:inline text-xs">ملقي</span>
-                    </button>
-                  </Link>
+                  {user && <ProfileDropdown user={user} />}
                   <button
                     onClick={() => localLogout.mutate()}
                     className="flex items-center gap-1 text-sm text-muted-foreground hover:text-destructive transition-colors px-2 py-1.5 rounded-lg hover:bg-destructive/10"
