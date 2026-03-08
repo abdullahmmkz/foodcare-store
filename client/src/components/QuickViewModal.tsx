@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ShoppingCart, TrendingUp, Tag, ExternalLink } from "lucide-react";
+import { X, ShoppingCart, TrendingUp, Tag, ExternalLink, Package } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import type { ProductItem } from "./ProductCard";
 import RelatedProducts from "./RelatedProducts";
@@ -46,7 +46,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
           <div className="relative bg-muted rounded-t-3xl md:rounded-r-3xl md:rounded-tl-none overflow-hidden aspect-square md:aspect-auto md:min-h-[320px]">
             {imgError ? (
               <div className="w-full h-full flex items-center justify-center bg-accent min-h-[280px]">
-                <span className="text-6xl">{product.diseaseIcon || "💊"}</span>
+                <Package size={48} className="text-muted-foreground/40" />
               </div>
             ) : (
               <img

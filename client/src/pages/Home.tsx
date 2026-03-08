@@ -252,7 +252,7 @@ export default function Home() {
                     : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
-                🌿 الكل
+                الكل
               </button>
 
               {diseases?.map(disease => (
@@ -310,7 +310,7 @@ export default function Home() {
         {/* Products Grid */}
         {allProducts.length === 0 && !isFetching ? (
           <div className="text-center py-20">
-            <div className="text-6xl mb-4">🔍</div>
+            <div className="mb-4"><Search size={48} className="mx-auto text-muted-foreground/40" /></div>
             <h3 className="text-lg font-bold text-foreground mb-2">لا توجد منتجات</h3>
             <p className="text-muted-foreground text-sm">جرب البحث بكلمة أخرى أو اختر تصنيفاً مختلفاً</p>
           </div>

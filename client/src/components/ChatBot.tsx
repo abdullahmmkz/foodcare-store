@@ -74,18 +74,18 @@ interface ChatBotProps {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const QUICK_SYMPTOMS = [
-  { icon: "😵", label: "دوخة" },
-  { icon: "😴", label: "إرهاق وتعب" },
-  { icon: "🤕", label: "صداع متكرر" },
-  { icon: "💔", label: "خفقان قلب" },
-  { icon: "🦴", label: "ألم مفاصل" },
-  { icon: "🧠", label: "ضعف تركيز" },
-  { icon: "😰", label: "قلق وتوتر" },
-  { icon: "🫁", label: "ضيق تنفس" },
-  { icon: "🤢", label: "مشاكل هضم" },
-  { icon: "💤", label: "اضطراب نوم" },
-  { icon: "💇", label: "تساقط شعر" },
-  { icon: "🥶", label: "برودة أطراف" },
+  { label: "دوخة" },
+  { label: "إرهاق وتعب" },
+  { label: "صداع متكرر" },
+  { label: "خفقان قلب" },
+  { label: "ألم مفاصل" },
+  { label: "ضعف تركيز" },
+  { label: "قلق وتوتر" },
+  { label: "ضيق تنفس" },
+  { label: "مشاكل هضم" },
+  { label: "اضطراب نوم" },
+  { label: "تساقط شعر" },
+  { label: "برودة أطراف" },
 ];
 
 const SEVERITY_CONFIG = {
@@ -103,11 +103,11 @@ const LAB_STATUS_CONFIG = {
 function buildWelcomeMessage(profile: HealthProfile | null | undefined, userName?: string): string {
   const name = userName ? ` ${userName}` : "";
   if (!profile) {
-    return `مرحباً${name}! 👋 أنا **د. فود**، محلل الأعراض الذكي من FoodCure.\n\nأخبرني عن الأعراض التي تشعر بها، أو ارفع صورة نتيجة فحص الدم وسأحللها لك.\n\nما الذي يمكنني مساعدتك به اليوم؟`;
+    return `مرحباً${name}! أنا **د. فود**، محلل الأعراض الذكي من FoodCure.\n\nأخبرني عن الأعراض التي تشعر بها، أو ارفع صورة نتيجة فحص الدم وسأحللها لك.\n\nما الذي يمكنني مساعدتك به اليوم؟`;
   }
   let diseases: string[] = [];
   try { diseases = profile.diseases ? JSON.parse(profile.diseases) : []; } catch { diseases = []; }
-  let msg = `مرحباً${name}! 👋 أنا **د. فود** — محلل الأعراض الذكي.\n\n`;
+  let msg = `مرحباً${name}! أنا **د. فود** — محلل الأعراض الذكي.\n\n`;
   if (diseases.length > 0) msg += `لاحظت أن لديك: ${diseases.join("، ")}.\n\n`;
   msg += `يمكنك:\n• وصف أعراضك وسأحللها\n• رفع صورة نتيجة فحص الدم للتحليل الفوري\n\nكيف يمكنني مساعدتك؟`;
   return msg;
@@ -215,7 +215,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
       // Show user message with image preview
       const userMsg: Message = {
         role: "user",
-        content: "📋 رفعت صورة نتيجة فحص دم للتحليل",
+        content: "رفعت صورة نتيجة فحص دم للتحليل",
         imagePreview: dataUrl,
         type: "lab_result",
       };
@@ -284,7 +284,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
     };
 
     const overallCfg = {
-      normal: { bg: "bg-emerald-50 border-emerald-200", text: "text-emerald-700", label: "جميع القيم طبيعية ✓" },
+      normal: { bg: "bg-emerald-50 border-emerald-200", text: "text-emerald-700", label: "جميع القيم طبيعية" },
       needs_attention: { bg: "bg-amber-50 border-amber-200", text: "text-amber-700", label: "بعض القيم تحتاج متابعة" },
       critical: { bg: "bg-red-50 border-red-200", text: "text-red-700", label: "قيم حرجة — راجع طبيباً" },
     }[labData.overallStatus];
@@ -301,7 +301,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
         {abnormal.length > 0 && (
           <div className="bg-white border border-border rounded-xl overflow-hidden">
             <div className="bg-red-50 px-3 py-1.5 border-b border-red-100">
-              <span className="text-xs font-bold text-red-700">⚠️ قيم خارج النطاق الطبيعي</span>
+              <span className="text-xs font-bold text-red-700">قيم خارج النطاق الطبيعي</span>
             </div>
             <div className="divide-y divide-border">
               {abnormal.map((v, i) => (
@@ -366,7 +366,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
                 src={product.image}
                 alt={product.name}
                 className="w-16 h-16 object-cover rounded-lg bg-muted"
-                onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/64x64/e8f5e9/059669?text=🌿"; }}
+                onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/64x64/e8f5e9/059669?text=FC"; }}
               />
               {product.diseaseIcon && (
                 <span className="absolute -top-1 -right-1 bg-white rounded-full shadow-sm w-5 h-5 flex items-center justify-center text-[10px]">
@@ -377,7 +377,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
             <div className="flex-1 min-w-0">
               <p className="font-bold text-xs text-foreground line-clamp-2 leading-tight mb-1">{product.name}</p>
               {product.reason && (
-                <p className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md mb-1.5 line-clamp-2">✓ {product.reason}</p>
+                <p className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md mb-1.5 line-clamp-2">{product.reason}</p>
               )}
               <div className="flex items-center justify-between gap-2">
                 {product.price
@@ -558,7 +558,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
                   onClick={() => sendMessage(s.label)}
                   className="text-xs px-2.5 py-1 bg-white border border-border text-foreground rounded-full hover:bg-primary hover:text-white hover:border-primary transition-all font-medium shadow-sm"
                 >
-                  {s.icon} {s.label}
+                  {s.label}
                 </button>
               ))}
             </div>
@@ -615,7 +615,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
           </div>
 
           <p className="text-center text-xs text-muted-foreground mt-2">
-            ⚠️ التحليل توعوي فقط وليس بديلاً عن استشارة طبيب متخصص
+            التحليل توعوي فقط وليس بديلاً عن استشارة طبيب متخصص
           </p>
         </div>
 

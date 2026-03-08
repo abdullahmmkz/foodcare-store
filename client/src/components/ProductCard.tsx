@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShoppingCart, Eye, TrendingUp } from "lucide-react";
+import { ShoppingCart, Eye, TrendingUp, Package } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -48,7 +48,7 @@ export default function ProductCard({ product, onQuickView, index = 0 }: Product
       <div className="relative overflow-hidden bg-muted aspect-square">
         {imgError ? (
           <div className="w-full h-full flex items-center justify-center bg-accent">
-            <span className="text-4xl">{product.diseaseIcon || "💊"}</span>
+            <Package size={32} className="text-muted-foreground/40" />
           </div>
         ) : (
           <img

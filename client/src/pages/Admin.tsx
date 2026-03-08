@@ -34,8 +34,8 @@ function DiseaseForm({ initial, onSave, onCancel }: {
             className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
         <div>
-          <label className="text-xs font-semibold text-muted-foreground mb-1 block">الأيقونة (Emoji)</label>
-          <input value={icon} onChange={e => setIcon(e.target.value)} placeholder="مثال: 🩸"
+          <label className="text-xs font-semibold text-muted-foreground mb-1 block">الأيقونة (اختياري)</label>
+          <input value={icon} onChange={e => setIcon(e.target.value)} placeholder="مثال: سكري"
             className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
       </div>
@@ -430,7 +430,7 @@ export default function Admin() {
                     ) : (
                       <div className="bg-card rounded-2xl border border-border p-4 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{disease.icon || "💊"}</span>
+                          <Tag size={18} className="text-primary shrink-0" />
                           <div>
                             <p className="font-semibold text-foreground">{disease.nameAr}</p>
                             <p className="text-xs text-muted-foreground">{disease.name}</p>

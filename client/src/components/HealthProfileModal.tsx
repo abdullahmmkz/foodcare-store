@@ -11,28 +11,28 @@ interface HealthProfileModalProps {
 }
 
 const DISEASES = [
-  { id: "سكري", label: "السكري", icon: "🩸", color: "bg-red-50 border-red-200 text-red-700" },
-  { id: "ضغط", label: "ضغط الدم", icon: "❤️", color: "bg-pink-50 border-pink-200 text-pink-700" },
-  { id: "كوليسترول", label: "الكوليسترول", icon: "🫀", color: "bg-orange-50 border-orange-200 text-orange-700" },
-  { id: "سمنة", label: "السمنة", icon: "⚖️", color: "bg-yellow-50 border-yellow-200 text-yellow-700" },
-  { id: "مناعة", label: "ضعف المناعة", icon: "🛡️", color: "bg-blue-50 border-blue-200 text-blue-700" },
-  { id: "مفاصل", label: "مشاكل المفاصل", icon: "🦴", color: "bg-purple-50 border-purple-200 text-purple-700" },
-  { id: "لا يوجد", label: "لا يوجد أمراض", icon: "✅", color: "bg-green-50 border-green-200 text-green-700" },
+  { id: "سكري", label: "السكري", color: "bg-red-50 border-red-200 text-red-700" },
+  { id: "ضغط", label: "ضغط الدم", color: "bg-pink-50 border-pink-200 text-pink-700" },
+  { id: "كوليسترول", label: "الكوليسترول", color: "bg-orange-50 border-orange-200 text-orange-700" },
+  { id: "سمنة", label: "السمنة", color: "bg-yellow-50 border-yellow-200 text-yellow-700" },
+  { id: "مناعة", label: "ضعف المناعة", color: "bg-blue-50 border-blue-200 text-blue-700" },
+  { id: "مفاصل", label: "مشاكل المفاصل", color: "bg-purple-50 border-purple-200 text-purple-700" },
+  { id: "لا يوجد", label: "لا يوجد أمراض", color: "bg-green-50 border-green-200 text-green-700" },
 ];
 
 const GOALS = [
-  { id: "weight_loss", label: "خسارة الوزن", icon: "⚖️" },
-  { id: "blood_sugar", label: "تنظيم السكر", icon: "🩸" },
-  { id: "blood_pressure", label: "تنظيم الضغط", icon: "❤️" },
-  { id: "cholesterol", label: "تحسين الكوليسترول", icon: "🫀" },
-  { id: "general_health", label: "صحة عامة", icon: "💪" },
+  { id: "weight_loss", label: "خسارة الوزن" },
+  { id: "blood_sugar", label: "تنظيم السكر" },
+  { id: "blood_pressure", label: "تنظيم الضغط" },
+  { id: "cholesterol", label: "تحسين الكوليسترول" },
+  { id: "general_health", label: "صحة عامة" },
 ];
 
 const ACTIVITY_LEVELS = [
-  { id: "sedentary", label: "خامل (جلوس معظم اليوم)", icon: "🪑" },
-  { id: "light", label: "خفيف (تمشية خفيفة)", icon: "🚶" },
-  { id: "moderate", label: "متوسط (رياضة 3 أيام)", icon: "🏃" },
-  { id: "active", label: "نشيط (رياضة يومية)", icon: "🏋️" },
+  { id: "sedentary", label: "خامل (جلوس معظم اليوم)" },
+  { id: "light", label: "خفيف (تمشية خفيفة)" },
+  { id: "moderate", label: "متوسط (رياضة 3 أيام)" },
+  { id: "active", label: "نشيط (رياضة يومية)" },
 ];
 
 export default function HealthProfileModal({ userId, userName, onClose, onComplete }: HealthProfileModalProps) {
@@ -113,7 +113,7 @@ export default function HealthProfileModal({ userId, userName, onClose, onComple
         <div className="bg-gradient-to-l from-emerald-600 to-emerald-500 p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold">مرحباً {userName}! 👋</h2>
+              <h2 className="text-xl font-bold">مرحباً {userName}!</h2>
               <p className="text-emerald-100 text-sm mt-1">أخبرنا عن صحتك لنصمم نظامك الغذائي</p>
             </div>
             <button onClick={onClose} className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
@@ -147,14 +147,14 @@ export default function HealthProfileModal({ userId, userName, onClose, onComple
                   onClick={() => setGender("male")}
                   className={`p-5 rounded-2xl border-2 text-center transition-all ${gender === "male" ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}
                 >
-                  <div className="text-4xl mb-2">👨</div>
+                  <div className="mb-2"><User className="w-10 h-10 mx-auto text-emerald-600" /></div>
                   <div className="font-semibold text-gray-700">ذكر</div>
                 </button>
                 <button
                   onClick={() => setGender("female")}
                   className={`p-5 rounded-2xl border-2 text-center transition-all ${gender === "female" ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}
                 >
-                  <div className="text-4xl mb-2">👩</div>
+                  <div className="mb-2"><User className="w-10 h-10 mx-auto text-pink-500" /></div>
                   <div className="font-semibold text-gray-700">أنثى</div>
                 </button>
               </div>
@@ -225,7 +225,6 @@ export default function HealthProfileModal({ userId, userName, onClose, onComple
                         : "border-gray-200 hover:border-emerald-300"
                     }`}
                   >
-                    <span className="text-xl">{d.icon}</span>
                     <span className="text-sm font-medium text-gray-700">{d.label}</span>
                     {selectedDiseases.includes(d.id) && (
                       <CheckCircle2 className="w-4 h-4 text-emerald-500 mr-auto" />
@@ -252,7 +251,6 @@ export default function HealthProfileModal({ userId, userName, onClose, onComple
                       goal === g.id ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"
                     }`}
                   >
-                    <span className="text-2xl">{g.icon}</span>
                     <span className="font-medium text-gray-700">{g.label}</span>
                     {goal === g.id && <CheckCircle2 className="w-5 h-5 text-emerald-500 mr-auto" />}
                   </button>
@@ -277,7 +275,6 @@ export default function HealthProfileModal({ userId, userName, onClose, onComple
                       activityLevel === a.id ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"
                     }`}
                   >
-                    <span className="text-xl">{a.icon}</span>
                     <span className="text-sm font-medium text-gray-700">{a.label}</span>
                     {activityLevel === a.id && <CheckCircle2 className="w-4 h-4 text-emerald-500 mr-auto" />}
                   </button>
