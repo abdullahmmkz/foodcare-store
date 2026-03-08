@@ -181,10 +181,10 @@ export default function Home() {
                   <Link href="/profile">
                     <button
                       className="flex items-center gap-1.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors px-2 py-1.5 rounded-lg border border-primary/20"
-                      title="لنتعرف عليك"
+                      title="ملقي"
                     >
                       <UserCircle size={15} />
-                      <span className="hidden sm:inline text-xs">لنتعرف عليك</span>
+                      <span className="hidden sm:inline text-xs">ملقي</span>
                     </button>
                   </Link>
                   <button

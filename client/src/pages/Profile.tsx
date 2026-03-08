@@ -196,7 +196,7 @@ export default function Profile() {
             }`}
           >
             <UserCircle size={16} />
-            الملف الصحي
+            لنتعرف عليك
           </button>
           <button
             onClick={() => setActiveTab("password")}
@@ -377,7 +377,7 @@ export default function Profile() {
               ) : (
                 <span className="flex items-center gap-2">
                   <Save size={18} />
-                  حفظ الملف الصحي
+                  حفظ المعلومات
                 </span>
               )}
             </Button>
