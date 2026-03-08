@@ -186,6 +186,15 @@ export default function Home() {
                     <UserCircle size={15} />
                     <span className="hidden sm:inline text-xs">ملفي</span>
                   </button>
+                  <Link href="/change-password">
+                    <button
+                      className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors px-2 py-1.5 rounded-lg hover:bg-primary/10"
+                      title="تغيير كلمة المرور"
+                    >
+                      <Shield size={15} />
+                      <span className="hidden sm:inline text-xs">كلمة المرور</span>
+                    </button>
+                  </Link>
                   <button
                     onClick={() => localLogout.mutate()}
                     className="flex items-center gap-1 text-sm text-muted-foreground hover:text-destructive transition-colors px-2 py-1.5 rounded-lg hover:bg-destructive/10"

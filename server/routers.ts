@@ -11,7 +11,7 @@ import {
   getProducts, getProductById, getRelatedProducts,
   createProduct, updateProduct, deleteProduct, incrementProductClicks,
   getAllProductsAdmin,
-  createLocalUser, getLocalUserByEmail, getLocalUserById,
+  createLocalUser, getLocalUserByEmail, getLocalUserById, updateLocalUserPassword,
   getHealthProfile, upsertHealthProfile,
   getProductsByKeywords,
 } from "./db";
@@ -109,6 +109,36 @@ export const appRouter = router({
       ctx.res.clearCookie(LOCAL_COOKIE, { ...cookieOptions, maxAge: -1 });
       return { success: true };
     }),
+
+    changePassword: publicProcedure
+      .input(z.object({
+        currentPassword: z.string().min(1, "كلمة المرور الحالية مطلوبة"),
+        newPassword: z.string().min(8, "كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Get token from cookie or Authorization header
+        let token = ctx.req.cookies?.[LOCAL_COOKIE];
+        if (!token) {
+          const authHeader = ctx.req.headers["authorization"];
+          if (authHeader?.startsWith("Bearer ")) token = authHeader.slice(7);
+        }
+        if (!token) throw new TRPCError({ code: "UNAUTHORIZED", message: "يجب تسجيل الدخول أولاً" });
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || "local-secret-key");
+        let userId: number;
+        try {
+          const { payload } = await jwtVerify(token, secret);
+          userId = Number(payload.sub);
+        } catch {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "جلسة غير صالحة، سجّل الدخول مجدداً" });
+        }
+        const user = await getLocalUserById(userId);
+        if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "المستخدم غير موجود" });
+        const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
+        if (!valid) throw new TRPCError({ code: "UNAUTHORIZED", message: "كلمة المرور الحالية غير صحيحة" });
+        const newHash = await bcrypt.hash(input.newPassword, 12);
+        await updateLocalUserPassword(userId, newHash);
+        return { success: true };
+      }),
   }),
 
   // ─── Diseases ─────────────────────────────────────────────────────────────

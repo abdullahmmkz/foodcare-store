@@ -248,6 +248,12 @@ export async function getLocalUserById(id: number) {
   return result[0];
 }
 
+export async function updateLocalUserPassword(id: number, passwordHash: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(localUsers).set({ passwordHash }).where(eq(localUsers.id, id));
+}
+
 // ─── Wishlist ────────────────────────────────────────────────────────────────
 export async function getWishlistByUser(userId: number) {
   const db = await getDb();
