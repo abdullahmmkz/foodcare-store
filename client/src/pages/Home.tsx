@@ -7,6 +7,7 @@ import ProductCard, { type ProductItem } from "@/components/ProductCard";
 import QuickViewModal from "@/components/QuickViewModal";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import { clearLocalToken } from "@/lib/localToken";
 
 type SortType = "newest";
 
@@ -20,6 +21,7 @@ export default function Home() {
   const { data: localUser } = trpc.localAuth.me.useQuery();
   const localLogout = trpc.localAuth.logout.useMutation({
     onSuccess: async () => {
+      clearLocalToken();
       await utils.localAuth.me.invalidate();
       toast.success("تم تسجيل الخروج بنجاح");
     },

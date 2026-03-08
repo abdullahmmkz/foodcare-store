@@ -6,6 +6,7 @@ import { Leaf, Eye, EyeOff, UserPlus, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { setLocalToken } from "@/lib/localToken";
 
 export default function Register() {
   const [, navigate] = useLocation();
@@ -19,6 +20,7 @@ export default function Register() {
 
   const registerMutation = trpc.localAuth.register.useMutation({
     onSuccess: async (data) => {
+      if (data.token) setLocalToken(data.token);
       await utils.localAuth.me.invalidate();
       toast.success(`مرحباً ${data.name}! تم إنشاء حسابك بنجاح`);
       navigate("/");

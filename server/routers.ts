@@ -52,7 +52,15 @@ export const appRouter = router({
   // ─── Local Auth (Email/Password) ─────────────────────────────────────────
   localAuth: router({
     me: publicProcedure.query(async ({ ctx }) => {
-      const token = ctx.req.cookies?.[LOCAL_COOKIE];
+      // Try cookie first
+      let token = ctx.req.cookies?.[LOCAL_COOKIE];
+      // Fallback: Authorization header (Bearer token from localStorage)
+      if (!token) {
+        const authHeader = ctx.req.headers["authorization"];
+        if (authHeader?.startsWith("Bearer ")) {
+          token = authHeader.slice(7);
+        }
+      }
       if (!token) return null;
       try {
         const secret = new TextEncoder().encode(process.env.JWT_SECRET || "local-secret-key");
@@ -80,7 +88,7 @@ export const appRouter = router({
         const token = await signLocalToken(userId, "user");
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(LOCAL_COOKIE, token, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
-        return { success: true, name: input.name, email: input.email, role: "user" };
+        return { success: true, name: input.name, email: input.email, role: "user", token };
       }),
 
     login: publicProcedure
@@ -93,7 +101,7 @@ export const appRouter = router({
         const token = await signLocalToken(user.id, user.role);
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(LOCAL_COOKIE, token, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
-        return { success: true, name: user.name, email: user.email, role: user.role };
+        return { success: true, name: user.name, email: user.email, role: user.role, token };
       }),
 
     logout: publicProcedure.mutation(({ ctx }) => {

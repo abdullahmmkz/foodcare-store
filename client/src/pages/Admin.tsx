@@ -6,6 +6,7 @@ import {
   X, Check, AlertCircle, LogOut, ChevronRight, BarChart3, Eye, ShoppingCart, Home
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { clearLocalToken } from "@/lib/localToken";
 
 type AdminTab = "dashboard" | "diseases" | "products";
 
@@ -143,6 +144,7 @@ export default function Admin() {
   const { data: localUser, isLoading: localUserLoading } = trpc.localAuth.me.useQuery();
   const localLogout = trpc.localAuth.logout.useMutation({
     onSuccess: async () => {
+      clearLocalToken();
       await utils.localAuth.me.invalidate();
       toast.success("تم تسجيل الخروج");
       navigate("/");
