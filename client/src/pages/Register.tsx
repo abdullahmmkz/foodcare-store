@@ -63,16 +63,16 @@ export default function Register() {
               <Leaf size={32} className="text-primary-foreground" />
             </div>
             <span className="font-black text-2xl text-foreground">
-              Food<span className="text-primary">Cure</span>
+              Nutritional <span className="text-primary">Care</span>
             </span>
           </Link>
-          <p className="text-muted-foreground text-sm mt-2">متجر صحة افليت</p>
+          <p className="text-muted-foreground text-sm mt-2">رعاية غذائية متخصصة</p>
         </div>
 
         {/* Card */}
         <div className="bg-white rounded-3xl shadow-xl border border-border p-8">
           <h1 className="text-2xl font-black text-foreground mb-1">إنشاء حساب جديد</h1>
-          <p className="text-muted-foreground text-sm mb-6">انضم إلى FoodCure وابدأ رحلتك الصحية</p>
+          <p className="text-muted-foreground text-sm mb-6">انضم إلى Nutritional Care وابدأ رحلتك الصحية</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">

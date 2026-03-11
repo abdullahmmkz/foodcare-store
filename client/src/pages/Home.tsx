@@ -366,10 +366,10 @@ export default function Home() {
               <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
                 <Leaf size={16} className="text-primary-foreground" />
               </div>
-              <span className="font-black text-foreground">FoodCure</span>
+              <span className="font-black text-foreground">Nutritional Care</span>
             </div>
             <p className="text-xs text-muted-foreground text-center">
-              منتجات صحية مختارة من Amazon وNoon • جميع الروابط روابط Affiliate
+              منتجات صحية مختارة بعناية • جودة ومصداقية مضمونة
             </p>
           </div>
         </div>

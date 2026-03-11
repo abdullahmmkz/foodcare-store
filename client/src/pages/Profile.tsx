@@ -171,7 +171,7 @@ export default function Profile() {
           <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
             <Leaf size={16} className="text-primary-foreground" />
           </div>
-          <span className="font-black text-foreground">FoodCure</span>
+          <span className="font-black text-foreground">Nutritional Care</span>
         </div>
       </header>
 

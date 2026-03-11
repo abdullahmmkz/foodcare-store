@@ -103,11 +103,11 @@ const LAB_STATUS_CONFIG = {
 function buildWelcomeMessage(profile: HealthProfile | null | undefined, userName?: string): string {
   const name = userName ? ` ${userName}` : "";
   if (!profile) {
-    return `مرحباً${name}! أنا **د. فود**، محلل الأعراض الذكي من FoodCure.\n\nأخبرني عن الأعراض التي تشعر بها، أو ارفع صورة نتيجة فحص الدم وسأحللها لك.\n\nما الذي يمكنني مساعدتك به اليوم؟`;
+    return `مرحباً${name}! أنا **د. نيوتري**، محلل الأعراض الذكي من Nutritional Care.\n\nأخبرني عن الأعراض التي تشعر بها، أو ارفع صورة نتيجة فحص الدم وسأحللها لك.\n\nما الذي يمكنني مساعدتك به اليوم؟`;
   }
   let diseases: string[] = [];
   try { diseases = profile.diseases ? JSON.parse(profile.diseases) : []; } catch { diseases = []; }
-  let msg = `مرحباً${name}! أنا **د. فود** — محلل الأعراض الذكي.\n\n`;
+  let msg = `مرحباً${name}! أنا **د. نيوتري** — محلل الأعراض الذكي.\n\n`;
   if (diseases.length > 0) msg += `لاحظت أن لديك: ${diseases.join("، ")}.\n\n`;
   msg += `يمكنك:\n• وصف أعراضك وسأحللها\n• رفع صورة نتيجة فحص الدم للتحليل الفوري\n\nكيف يمكنني مساعدتك؟`;
   return msg;
@@ -350,7 +350,7 @@ export default function ChatBot({ onClose, healthProfile, userName }: ChatBotPro
     <div className="w-full mt-1 space-y-2">
       <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-full w-fit">
         <Sparkles size={12} />
-        <span className="text-xs font-bold">منتجات مرشّحة من FoodCure</span>
+        <span className="text-xs font-bold">منتجات مرشّحة من Nutritional Care</span>
       </div>
       {products.map((product, pIdx) => (
         <div key={`${product.id}-${pIdx}`} className="bg-white border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:border-primary/30">

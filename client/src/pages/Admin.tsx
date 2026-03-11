@@ -92,7 +92,7 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
             className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" dir="ltr" />
         </div>
         <div>
-          <label className="text-xs font-semibold text-muted-foreground mb-1 block">رابط المنتج (Affiliate) *</label>
+          <label className="text-xs font-semibold text-muted-foreground mb-1 block">رابط المنتج *</label>
           <input value={link} onChange={e => setLink(e.target.value)} placeholder="https://amazon.com/..."
             className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" dir="ltr" />
         </div>
