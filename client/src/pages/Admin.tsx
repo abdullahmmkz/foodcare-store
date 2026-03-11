@@ -260,7 +260,7 @@ export default function Admin() {
               <Leaf size={20} className="text-primary-foreground" />
             </div>
             <div>
-              <div className="font-black text-sm text-foreground">Food<span className="text-primary">Cure</span></div>
+              <div className="font-black text-sm text-foreground">Nutritional <span className="text-primary">Care</span></div>
               <div className="text-xs text-muted-foreground">لوحة الأدمن</div>
             </div>
           </div>
@@ -326,6 +326,13 @@ export default function Admin() {
                 </button>
               ))}
             </div>
+            {/* Back to store button */}
+            <Link href="/">
+              <button className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-primary border border-primary/30 hover:bg-primary hover:text-white transition-all duration-200">
+                <Home size={15} />
+                <span className="hidden sm:inline">المتجر</span>
+              </button>
+            </Link>
             {/* Logout button visible on all screen sizes */}
             <button
               onClick={() => { logout(); }}
