@@ -171,7 +171,7 @@ export default function Admin() {
     onError: () => toast.error("حدث خطأ"),
   });
   const updateDisease = trpc.diseases.update.useMutation({
-    onSuccess: () => { utils.diseases.list.invalidate(); setEditingDisease(null); toast.success("تم تحديث التصنيف"); },
+    onSuccess: () => { setEditingDisease(null); setShowDiseaseForm(false); utils.diseases.list.invalidate(); toast.success("تم تحديث التصنيف"); },
     onError: () => toast.error("حدث خطأ"),
   });
   const deleteDisease = trpc.diseases.delete.useMutation({
@@ -184,7 +184,7 @@ export default function Admin() {
     onError: () => toast.error("حدث خطأ"),
   });
   const updateProduct = trpc.products.update.useMutation({
-    onSuccess: () => { utils.products.adminList.invalidate(); setEditingProduct(null); toast.success("تم تحديث المنتج"); },
+    onSuccess: () => { setEditingProduct(null); setShowProductForm(false); utils.products.adminList.invalidate(); toast.success("تم تحديث المنتج"); },
     onError: () => toast.error("حدث خطأ"),
   });
   const deleteProduct = trpc.products.delete.useMutation({
