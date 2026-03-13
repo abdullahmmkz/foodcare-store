@@ -257,7 +257,6 @@ export default function Home() {
                       : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
-                  {disease.icon && <span>{disease.icon}</span>}
                   {disease.nameAr}
                 </button>
               ))}
