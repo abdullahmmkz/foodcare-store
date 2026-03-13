@@ -13,16 +13,15 @@ type AdminTab = "dashboard" | "diseases" | "products";
 // ─── Disease Form ─────────────────────────────────────────────────────────────
 function DiseaseForm({ initial, onSave, onCancel }: {
   initial?: { id?: number; name: string; nameAr: string; icon?: string | null };
-  onSave: (data: { name: string; nameAr: string; icon?: string }) => void;
+  onSave: (data: { name: string; nameAr: string }) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(initial?.name || "");
   const [nameAr, setNameAr] = useState(initial?.nameAr || "");
-  const [icon, setIcon] = useState(initial?.icon || "");
 
   return (
     <div className="bg-accent/30 rounded-2xl p-5 border border-border mb-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs font-semibold text-muted-foreground mb-1 block">الاسم بالعربي *</label>
           <input value={nameAr} onChange={e => setNameAr(e.target.value)} placeholder="مثال: السكري"
@@ -33,18 +32,13 @@ function DiseaseForm({ initial, onSave, onCancel }: {
           <input value={name} onChange={e => setName(e.target.value)} placeholder="مثال: Diabetes"
             className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground mb-1 block">الأيقونة (اختياري)</label>
-          <input value={icon} onChange={e => setIcon(e.target.value)} placeholder="مثال: سكري"
-            className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-        </div>
       </div>
       <div className="flex items-center gap-2 mt-3 justify-end">
         <button onClick={onCancel} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors">
           <X size={14} /> إلغاء
         </button>
         <button
-          onClick={() => { if (!name || !nameAr) { toast.error("يرجى ملء جميع الحقول المطلوبة"); return; } onSave({ name, nameAr, icon: icon || undefined }); }}
+          onClick={() => { if (!name || !nameAr) { toast.error("يرجى ملء جميع الحقول المطلوبة"); return; } onSave({ name, nameAr }); }}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <Check size={14} /> حفظ
@@ -156,7 +150,7 @@ export default function Admin() {
   const logout = () => localLogout.mutate();
   const [tab, setTab] = useState<AdminTab>("dashboard");
   const [showDiseaseForm, setShowDiseaseForm] = useState(false);
-  const [editingDisease, setEditingDisease] = useState<{ id: number; name: string; nameAr: string; icon?: string | null } | null>(null);
+  const [editingDisease, setEditingDisease] = useState<{ id: number; name: string; nameAr: string } | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<{ id: number; name: string; image: string; link: string; diseaseId: number; price?: string | null; featured?: number } | null>(null);
 
@@ -445,7 +439,7 @@ export default function Admin() {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => setEditingDisease({ id: disease.id, name: disease.name, nameAr: disease.nameAr, icon: disease.icon })}
+                            onClick={() => setEditingDisease({ id: disease.id, name: disease.name, nameAr: disease.nameAr })}
                             className="p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                           >
                             <Pencil size={15} />
