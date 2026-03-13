@@ -1,0 +1,25 @@
+{
+  "query": "UPDATE diseases SET nameAr = 'السمنة' WHERE nameAr = 'السمنه'; SELECT id, nameAr, name FROM diseases;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2CDbTqdqtw4FQjd.root --database GHTpfk4SpEdMpWpbzXoixY --execute UPDATE diseases SET nameAr = 'السمنة' WHERE nameAr = 'السمنه'; SELECT id, nameAr, name FROM diseases;",
+  "rows": [
+    {
+      "id": "60002",
+      "nameAr": "السكري",
+      "name": "diabetes"
+    },
+    {
+      "id": "60003",
+      "nameAr": " الضغط ",
+      "name": "High blood pressure"
+    },
+    {
+      "id": "60004",
+      "nameAr": " السمنه",
+      "name": "Obesity disease"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnameAr\tname\n60002\tالسكري\tdiabetes\n60003\t الضغط \tHigh blood pressure\n60004\t السمنه\tObesity disease\n",
+  "stderr": "",
+  "execution_time_ms": 1717
+}

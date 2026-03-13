@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
@@ -37,7 +38,15 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
-  // Sitemap
+
+  // Serve robots.txt explicitly before Vite middleware
+  app.get("/robots.txt", (_req, res) => {
+    const robotsPath = path.resolve(process.cwd(), "client/public/robots.txt");
+    res.setHeader("Content-Type", "text/plain");
+    res.sendFile(robotsPath);
+  });
+
+  // Sitemap (dynamic - must come before Vite)
   app.use(sitemapRouter);
   // SSR for product pages (production only)
   app.use(ssrRouter);

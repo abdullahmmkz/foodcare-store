@@ -9,8 +9,8 @@ interface SEOProps {
 }
 
 const BASE_URL = "https://nutritional-care.manus.space";
-const DEFAULT_TITLE = "Nutritional Care - منتجات صحية مختارة";
-const DEFAULT_DESC = "اكتشف أفضل المنتجات الصحية المختارة بعناية لمرضى السكري والضغط والسمنة.";
+const DEFAULT_TITLE = "Nutritional Care | رعاية غذائية - منتجات صحية للسكري والضغط والسمنة";
+const DEFAULT_DESC = "اكتشف أفضل المنتجات الصحية والمكملات الغذائية المختارة بعناية لمرضى السكري وضغط الدم والسمنة. توصيات غذائية موثوقة تناسب حالتك الصحية.";
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;
 
 function setMeta(name: string, content: string, attr: "name" | "property" = "name") {

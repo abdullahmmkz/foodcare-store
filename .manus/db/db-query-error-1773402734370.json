@@ -1,0 +1,8 @@
+{
+  "query": "UPDATE diseases SET name_ar = 'السمنة' WHERE name_ar = 'السمنه'; SELECT id, name_ar, name_en FROM diseases;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2CDbTqdqtw4FQjd.root --database GHTpfk4SpEdMpWpbzXoixY --execute UPDATE diseases SET name_ar = 'السمنة' WHERE name_ar = 'السمنه'; SELECT id, name_ar, name_en FROM diseases;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'name_ar' in 'where clause'"
+  ]
+}

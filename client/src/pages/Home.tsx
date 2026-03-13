@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, MessageCircle, LogIn, Shield, LogOut, UserCircle } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight, Leaf, ShoppingBag, LogIn, Shield, LogOut, UserCircle, Globe, Mail, FileText, Info } from "lucide-react";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import HealthProfileModal from "@/components/HealthProfileModal";
 import { trpc } from "@/lib/trpc";
@@ -31,9 +31,12 @@ export default function Home() {
   const isAuthenticated = !!localUser;
   const user = localUser;
 
+  // Language toggle: ar (default) or en
+  const [lang, setLang] = useState<"ar" | "en">("ar");
+
   useSEO({
-    title: "Nutritional Care - منتجات صحية مختارة",
-    description: "اكتشف أفضل المنتجات الصحية المختارة بعناية لمرضى السكري والضغط والسمنة. توصيات غذائية ومكملات طبيعية تناسب حالتك الصحية.",
+    title: "Nutritional Care | رعاية غذائية - منتجات صحية للسكري والضغط والسمنة",
+    description: "اكتشف أفضل المنتجات الصحية والمكملات الغذائية المختارة بعناية لمرضى السكري وضغط الدم والسمنة. توصيات غذائية موثوقة تناسب حالتك الصحية.",
     url: "/",
   });
 
@@ -130,10 +133,53 @@ export default function Home() {
     categoriesRef.current.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
   };
 
+  const t = {
+    ar: {
+      search: "ابحث عن منتج أو مرض...",
+      admin: "الأدمن",
+      login: "دخول",
+      register: "حساب جديد",
+      logout: "خروج",
+      badge: "أفضل المنتجات الصحية",
+      hero: "منتجات صحية مختارة بعناية",
+      all: "الكل",
+      products: "منتج",
+      searchFor: 'لـ "',
+      noProducts: "لا توجد منتجات",
+      noProductsHint: "جرب البحث بكلمة أخرى أو اختر تصنيفاً مختلفاً",
+      allShown: "تم عرض جميع المنتجات",
+      footerTagline: "منتجات صحية مختارة بعناية • جودة ومصداقية مضمونة",
+      aboutUs: "من نحن",
+      privacy: "سياسة الخصوصية",
+      contact: "تواصل معنا",
+      allRights: "جميع الحقوق محفوظة",
+    },
+    en: {
+      search: "Search for a product or condition...",
+      admin: "Admin",
+      login: "Login",
+      register: "Sign Up",
+      logout: "Logout",
+      badge: "Best Health Products",
+      hero: "Carefully Selected Health Products",
+      all: "All",
+      products: "products",
+      searchFor: 'for "',
+      noProducts: "No products found",
+      noProductsHint: "Try a different keyword or select another category",
+      allShown: "All products displayed",
+      footerTagline: "Carefully selected health products • Quality and trust guaranteed",
+      aboutUs: "About Us",
+      privacy: "Privacy Policy",
+      contact: "Contact Us",
+      allRights: "All rights reserved",
+    },
+  };
 
+  const tx = t[lang];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${lang === "en" ? "font-sans" : ""}`} dir={lang === "en" ? "ltr" : "rtl"}>
       {/* ─── Sticky Header ─────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-border shadow-sm">
         <div className="container">
@@ -144,39 +190,49 @@ export default function Home() {
                 <Leaf size={20} className="text-primary-foreground" />
               </div>
               <span className="font-black text-lg text-foreground hidden sm:block">
-                Food<span className="text-primary">Cure</span>
+                Nutritional <span className="text-primary">Care</span>
               </span>
             </Link>
 
             {/* Search Bar */}
             <div className="flex-1 relative">
-              <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Search size={16} className={`absolute ${lang === "en" ? "left-3" : "right-3"} top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none`} />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="ابحث عن منتج أو مرض..."
-                className="w-full bg-muted border border-border rounded-xl py-2.5 pr-9 pl-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                placeholder={tx.search}
+                className={`w-full bg-muted border border-border rounded-xl py-2.5 ${lang === "en" ? "pl-9 pr-9" : "pr-9 pl-9"} text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all`}
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className={`absolute ${lang === "en" ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground`}
                 >
                   <X size={14} />
                 </button>
               )}
             </div>
 
-            {/* Auth / Admin */}
+            {/* Auth / Admin / Language */}
             <div className="flex items-center gap-2 shrink-0">
+              {/* Language Toggle */}
+              <button
+                onClick={() => setLang(lang === "ar" ? "en" : "ar")}
+                className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary border border-border rounded-lg px-2 py-1.5 hover:bg-muted transition-colors"
+                title={lang === "ar" ? "Switch to English" : "التبديل للعربية"}
+              >
+                <Globe size={13} />
+                <span>{lang === "ar" ? "EN" : "ع"}</span>
+              </button>
+
               {isAuthenticated ? (
                 <>
                   {user?.role === "admin" && (
                     <Link href="/admin">
                       <button className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-3 py-2 rounded-xl hover:bg-primary/90 transition-colors">
                         <Shield size={15} />
-                        <span className="hidden sm:inline">الأدمن</span>
+                        <span className="hidden sm:inline">{tx.admin}</span>
                       </button>
                     </Link>
                   )}
@@ -190,21 +246,21 @@ export default function Home() {
                   <button
                     onClick={() => localLogout.mutate()}
                     className="flex items-center gap-1 text-sm text-muted-foreground hover:text-destructive transition-colors px-2 py-1.5 rounded-lg hover:bg-destructive/10"
-                    title="تسجيل الخروج"
+                    title={tx.logout}
                   >
                     <LogOut size={15} />
-                    <span className="hidden sm:inline text-xs">خروج</span>
+                    <span className="hidden sm:inline text-xs">{tx.logout}</span>
                   </button>
                 </>
               ) : (
                 <div className="flex items-center gap-2">
                   <Link href="/login" className="flex items-center gap-1.5 text-sm font-semibold text-foreground px-3 py-2 rounded-xl border border-border hover:bg-muted transition-colors">
                     <LogIn size={15} />
-                    <span className="hidden sm:inline">دخول</span>
+                    <span className="hidden sm:inline">{tx.login}</span>
                   </Link>
                   <Link href="/register" className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-3 py-2 rounded-xl hover:bg-primary/90 transition-colors">
                     <UserCircle size={15} />
-                    <span className="hidden sm:inline">حساب جديد</span>
+                    <span className="hidden sm:inline">{tx.register}</span>
                   </Link>
                 </div>
               )}
@@ -218,12 +274,11 @@ export default function Home() {
         <div className="container py-8 text-center">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-3 py-1.5 rounded-full mb-3">
             <ShoppingBag size={12} />
-            أفضل المنتجات الصحية
+            {tx.badge}
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-foreground mb-2">
-            منتجات صحية مختارة بعناية
+            {tx.hero}
           </h1>
-
         </div>
       </div>
 
@@ -251,7 +306,7 @@ export default function Home() {
                     : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
-                الكل
+                {tx.all}
               </button>
 
               {diseases?.map(disease => (
@@ -264,7 +319,7 @@ export default function Home() {
                       : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
-                  {disease.nameAr}
+                  {lang === "en" && disease.name ? disease.name : disease.nameAr}
                 </button>
               ))}
             </div>
@@ -286,23 +341,21 @@ export default function Home() {
           <div className="text-sm text-muted-foreground">
             {productsData ? (
               <span>
-                <strong className="text-foreground">{productsData.total.toLocaleString()}</strong> منتج
-                {debouncedSearch && <span> لـ "<strong className="text-primary">{debouncedSearch}</strong>"</span>}
+                <strong className="text-foreground">{productsData.total.toLocaleString()}</strong> {tx.products}
+                {debouncedSearch && <span> {tx.searchFor}<strong className="text-primary">{debouncedSearch}</strong>"</span>}
               </span>
             ) : (
               <span className="skeleton h-4 w-24 inline-block" />
             )}
           </div>
-
-
         </div>
 
         {/* Products Grid */}
         {allProducts.length === 0 && !isFetching ? (
           <div className="text-center py-20">
             <div className="mb-4"><Search size={48} className="mx-auto text-muted-foreground/40" /></div>
-            <h3 className="text-lg font-bold text-foreground mb-2">لا توجد منتجات</h3>
-            <p className="text-muted-foreground text-sm">جرب البحث بكلمة أخرى أو اختر تصنيفاً مختلفاً</p>
+            <h3 className="text-lg font-bold text-foreground mb-2">{tx.noProducts}</h3>
+            <p className="text-muted-foreground text-sm">{tx.noProductsHint}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -338,7 +391,7 @@ export default function Home() {
         {!hasMore && allProducts.length > 0 && (
           <div className="text-center py-8 text-muted-foreground text-sm">
             <div className="w-12 h-0.5 bg-border mx-auto mb-3" />
-            تم عرض جميع المنتجات ({allProducts.length})
+            {tx.allShown} ({allProducts.length})
           </div>
         )}
       </main>
@@ -403,17 +456,79 @@ export default function Home() {
 
       {/* ─── Footer ────────────────────────────────────────────────────────── */}
       <footer className="bg-white border-t border-border mt-12">
-        <div className="container py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
-                <Leaf size={16} className="text-primary-foreground" />
+        <div className="container py-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-8">
+            {/* Brand */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center">
+                  <Leaf size={18} className="text-primary-foreground" />
+                </div>
+                <span className="font-black text-foreground text-lg">Nutritional Care</span>
               </div>
-              <span className="font-black text-foreground">Nutritional Care</span>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {lang === "ar"
+                  ? "منصة متخصصة في توصية المنتجات الصحية والمكملات الغذائية لمرضى السكري وضغط الدم والسمنة."
+                  : "A platform specialized in recommending health products and nutritional supplements for diabetes, blood pressure, and obesity patients."}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground text-center">
-              منتجات صحية مختارة بعناية • جودة ومصداقية مضمونة
+
+            {/* Quick Links */}
+            <div className="flex flex-col gap-3">
+              <h3 className="font-bold text-foreground text-sm">{lang === "ar" ? "روابط سريعة" : "Quick Links"}</h3>
+              <div className="flex flex-col gap-2">
+                <Link href="/" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                  <ShoppingBag size={12} />
+                  {lang === "ar" ? "المتجر" : "Store"}
+                </Link>
+                <Link href="/about" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                  <Info size={12} />
+                  {tx.aboutUs}
+                </Link>
+                <Link href="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                  <FileText size={12} />
+                  {tx.privacy}
+                </Link>
+              </div>
+            </div>
+
+            {/* Contact */}
+            <div className="flex flex-col gap-3">
+              <h3 className="font-bold text-foreground text-sm">{tx.contact}</h3>
+              <div className="flex flex-col gap-2">
+                <a
+                  href="mailto:info@nutritional-care.manus.space"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+                >
+                  <Mail size={12} />
+                  info@nutritional-care.manus.space
+                </a>
+                <div className="flex items-center gap-2 mt-1">
+                  <button
+                    onClick={() => setLang("ar")}
+                    className={`text-xs px-2 py-1 rounded border transition-colors ${lang === "ar" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}
+                  >
+                    العربية
+                  </button>
+                  <button
+                    onClick={() => setLang("en")}
+                    className={`text-xs px-2 py-1 rounded border transition-colors ${lang === "en" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}
+                  >
+                    English
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-border pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? `© ${new Date().getFullYear()} Nutritional Care. ${tx.allRights}.`
+                : `© ${new Date().getFullYear()} Nutritional Care. ${tx.allRights}.`}
             </p>
+            <p className="text-xs text-muted-foreground text-center">{tx.footerTagline}</p>
           </div>
         </div>
       </footer>
