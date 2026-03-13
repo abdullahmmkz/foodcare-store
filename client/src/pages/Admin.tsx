@@ -93,10 +93,11 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
         <div>
           <label className="text-xs font-semibold text-muted-foreground mb-1 block">التصنيف (المرض) *</label>
           <select value={diseaseId} onChange={e => setDiseaseId(Number(e.target.value))}
-            className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-            <option value={0}>اختر التصنيف</option>
+            className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            style={{ direction: 'rtl' }}>
+            <option value={0} disabled>اختر التصنيف</option>
             {diseases.map(d => (
-              <option key={d.id} value={d.id}>{d.icon} {d.nameAr}</option>
+              <option key={d.id} value={d.id}>{d.nameAr}</option>
             ))}
           </select>
         </div>
