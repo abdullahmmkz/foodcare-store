@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /profile
+Disallow: /api/
+
+Sitemap: https://nutritional-care.manus.space/sitemap.xml

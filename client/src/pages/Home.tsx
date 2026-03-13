@@ -357,6 +357,43 @@ export default function Home() {
         />
       )}
 
+      {/* ─── Schema Markup JSON-LD ──────────────────────────────────────── */}
+      {allProducts.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              "name": "منتجات صحية مختارة - Nutritional Care",
+              "description": "أفضل المنتجات الصحية لمرضى السكري والضغط والسمنة",
+              "url": "https://nutritional-care.manus.space/",
+              "numberOfItems": allProducts.length,
+              "itemListElement": allProducts.slice(0, 20).map((product, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "item": {
+                  "@type": "Product",
+                  "name": product.name,
+                  "description": product.name,
+                  "image": product.image || "",
+                  "url": product.link,
+                  "offers": {
+                    "@type": "Offer",
+                    "availability": "https://schema.org/InStock",
+                    "priceCurrency": "SAR",
+                    "seller": {
+                      "@type": "Organization",
+                      "name": "Nutritional Care"
+                    }
+                  }
+                }
+              }))
+            })
+          }}
+        />
+      )}
+
       {/* ─── Footer ────────────────────────────────────────────────────────── */}
       <footer className="bg-white border-t border-border mt-12">
         <div className="container py-8">

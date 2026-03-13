@@ -156,3 +156,8 @@
 - [x] تغيير نص "ملفي" في الهيدر إلى "لنتعرف عليك"
 - [x] حذف صفحة ChangePassword المستقلة وإزالة مسارها من App.tsx
 - [x] إزالة زر "كلمة المرور" المنفصل من الهيدر
+
+## تحسينات SEO
+- [x] إضافة Meta Description وOpen Graph في index.html
+- [x] إنشاء robots.txt وsitemap.xml
+- [x] إضافة Schema Markup (JSON-LD) لصفحات المنتجات
