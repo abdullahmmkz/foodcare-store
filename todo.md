@@ -161,3 +161,11 @@
 - [x] إضافة Meta Description وOpen Graph في index.html
 - [x] إنشاء robots.txt وsitemap.xml
 - [x] إضافة Schema Markup (JSON-LD) لصفحات المنتجات
+
+## تحسينات SEO المتقدمة
+- [ ] تحديث index.html بالرابط الصحيح (nutritional-care.manus.space)
+- [ ] إنشاء robots.txt محدّث
+- [ ] إنشاء server/routes/sitemap.ts (Dynamic Sitemap)
+- [ ] إنشاء server/routes/ssr.ts (SSR للمنتجات)
+- [ ] إنشاء client/src/hooks/useSEO.ts وإضافته للصفحات
+- [ ] توليد صورة Open Graph (1200×630)

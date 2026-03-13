@@ -8,6 +8,7 @@ import QuickViewModal from "@/components/QuickViewModal";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { clearLocalToken } from "@/lib/localToken";
+import { useSEO } from "@/hooks/useSEO";
 
 type SortType = "newest";
 
@@ -29,6 +30,12 @@ export default function Home() {
 
   const isAuthenticated = !!localUser;
   const user = localUser;
+
+  useSEO({
+    title: "Nutritional Care - منتجات صحية مختارة",
+    description: "اكتشف أفضل المنتجات الصحية المختارة بعناية لمرضى السكري والضغط والسمنة. توصيات غذائية ومكملات طبيعية تناسب حالتك الصحية.",
+    url: "/",
+  });
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
