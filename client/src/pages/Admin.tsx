@@ -90,16 +90,25 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
           <input value={link} onChange={e => setLink(e.target.value)} placeholder="https://amazon.com/..."
             className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" dir="ltr" />
         </div>
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground mb-1 block">التصنيف (المرض) *</label>
-          <select value={diseaseId} onChange={e => setDiseaseId(Number(e.target.value))}
-            className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            style={{ direction: 'rtl' }}>
-            <option value={0} disabled>اختر التصنيف</option>
+        <div className="sm:col-span-2">
+          <label className="text-xs font-semibold text-muted-foreground mb-2 block">التصنيف (المرض) *</label>
+          <div className="flex flex-wrap gap-2">
             {diseases.map(d => (
-              <option key={d.id} value={d.id}>{d.nameAr}</option>
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setDiseaseId(d.id)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+                  diseaseId === d.id
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-white text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
+                }`}
+              >
+                {d.nameAr}
+              </button>
             ))}
-          </select>
+          </div>
+          {diseaseId === 0 && <p className="text-xs text-muted-foreground mt-1">يرجى اختيار تصنيف</p>}
         </div>
         <div>
           <label className="text-xs font-semibold text-muted-foreground mb-1 block">السعر (اختياري)</label>
