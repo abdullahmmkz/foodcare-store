@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   Leaf, LayoutDashboard, Package, Tag, TrendingUp, Plus, Pencil, Trash2,
-  X, Check, AlertCircle, LogOut, ChevronRight, BarChart3, Eye, ShoppingCart, Home
+  X, Check, AlertCircle, LogOut, ChevronRight, BarChart3, Eye, ShoppingCart, Home,
+  Upload, ImageIcon, Link2
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { clearLocalToken } from "@/lib/localToken";
@@ -61,6 +62,51 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
   const [diseaseId, setDiseaseId] = useState(initial?.diseaseId || 0);
   const [price, setPrice] = useState(initial?.price || "");
   const [featured, setFeatured] = useState(initial?.featured || 0);
+  const [imageMode, setImageMode] = useState<"url" | "upload">("url");
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadImage = trpc.products.uploadImage.useMutation({
+    onSuccess: (data) => {
+      setImage(data.url);
+      setUploadProgress(false);
+      toast.success("تم رفع الصورة بنجاح!");
+    },
+    onError: (err) => {
+      setUploadProgress(false);
+      toast.error(err.message || "فشل رفع الصورة");
+    },
+  });
+
+  const processFile = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("يرجى اختيار ملف صورة صالح (JPG, PNG, WebP)");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("حجم الصورة يجب أن يكون أقل من 10MB");
+      return;
+    }
+    setUploadProgress(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = (e.target?.result as string).split(",")[1];
+      uploadImage.mutate({
+        base64,
+        mimeType: file.type,
+        fileName: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
+  }, [uploadImage]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  }, [processFile]);
 
   const handleSave = () => {
     if (!name || !image || !link || !diseaseId) {
@@ -75,21 +121,118 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
   return (
     <div className="bg-accent/30 rounded-2xl p-5 border border-border mb-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Product Name */}
         <div className="sm:col-span-2">
           <label className="text-xs font-semibold text-muted-foreground mb-1 block">اسم المنتج *</label>
           <input value={name} onChange={e => setName(e.target.value)} placeholder="اسم المنتج الكامل"
             className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground mb-1 block">رابط الصورة *</label>
-          <input value={image} onChange={e => setImage(e.target.value)} placeholder="https://..."
-            className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" dir="ltr" />
+
+        {/* Image Section */}
+        <div className="sm:col-span-2">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-semibold text-muted-foreground">صورة المنتج *</label>
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => setImageMode("upload")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  imageMode === "upload" ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Upload size={11} /> رفع صورة
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageMode("url")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  imageMode === "url" ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Link2 size={11} /> رابط URL
+              </button>
+            </div>
+          </div>
+
+          {imageMode === "upload" ? (
+            <div
+              onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => !uploadProgress && fileInputRef.current?.click()}
+              className={`relative border-2 border-dashed rounded-xl transition-all cursor-pointer ${
+                isDragging
+                  ? "border-primary bg-primary/5 scale-[1.01]"
+                  : "border-border bg-white hover:border-primary/50 hover:bg-primary/3"
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f); e.target.value = ""; }}
+              />
+
+              {image && !uploadProgress ? (
+                <div className="flex items-center gap-4 p-4">
+                  <img src={image} alt="preview" className="w-20 h-20 object-cover rounded-xl border border-border shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground mb-1">تم رفع الصورة بنجاح</p>
+                    <p className="text-xs text-muted-foreground truncate" dir="ltr">{image}</p>
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setImage(""); }}
+                      className="mt-2 text-xs text-destructive hover:underline flex items-center gap-1"
+                    >
+                      <X size={11} /> حذف الصورة
+                    </button>
+                  </div>
+                </div>
+              ) : uploadProgress ? (
+                <div className="flex flex-col items-center justify-center py-8 gap-3">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-muted-foreground">جاري رفع الصورة...</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 gap-2">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <ImageIcon size={22} className="text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">اسحب الصورة هنا أو انقر للاختيار</p>
+                  <p className="text-xs text-muted-foreground">JPG, PNG, WebP — حتى 10MB</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                value={image}
+                onChange={e => setImage(e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                className="flex-1 bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                dir="ltr"
+              />
+              {image && (
+                <img
+                  src={image}
+                  alt="preview"
+                  className="w-11 h-11 object-cover rounded-xl border border-border shrink-0"
+                  onError={e => (e.target as HTMLImageElement).style.display = "none"}
+                />
+              )}
+            </div>
+          )}
         </div>
-        <div>
+
+        {/* Product Link */}
+        <div className="sm:col-span-2">
           <label className="text-xs font-semibold text-muted-foreground mb-1 block">رابط المنتج *</label>
           <input value={link} onChange={e => setLink(e.target.value)} placeholder="https://amazon.com/..."
             className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" dir="ltr" />
         </div>
+
+        {/* Disease */}
         <div className="sm:col-span-2">
           <label className="text-xs font-semibold text-muted-foreground mb-2 block">التصنيف (المرض) *</label>
           <div className="flex flex-wrap gap-2">
@@ -110,6 +253,8 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
           </div>
           {diseaseId === 0 && <p className="text-xs text-muted-foreground mt-1">يرجى اختيار تصنيف</p>}
         </div>
+
+        {/* Price & Featured */}
         <div>
           <label className="text-xs font-semibold text-muted-foreground mb-1 block">السعر (اختياري)</label>
           <input value={price} onChange={e => setPrice(e.target.value)} placeholder="مثال: 45 ريال"
@@ -123,17 +268,16 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
           </label>
         </div>
       </div>
-      {image && (
-        <div className="mt-3">
-          <label className="text-xs font-semibold text-muted-foreground mb-1 block">معاينة الصورة</label>
-          <img src={image} alt="preview" className="h-20 w-20 object-cover rounded-xl border border-border" onError={e => (e.target as HTMLImageElement).style.display = "none"} />
-        </div>
-      )}
-      <div className="flex items-center gap-2 mt-3 justify-end">
+
+      <div className="flex items-center gap-2 mt-4 justify-end">
         <button onClick={onCancel} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors">
           <X size={14} /> إلغاء
         </button>
-        <button onClick={handleSave} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+        <button
+          onClick={handleSave}
+          disabled={uploadProgress}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <Check size={14} /> حفظ
         </button>
       </div>

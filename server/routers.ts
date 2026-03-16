@@ -206,6 +206,25 @@ export const appRouter = router({
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => { await deleteProduct(input.id); return { success: true }; }),
+
+    // Upload product image to S3
+    uploadImage: adminProcedure
+      .input(z.object({
+        base64: z.string(),
+        mimeType: z.string().default("image/jpeg"),
+        fileName: z.string().default("product.jpg"),
+      }))
+      .mutation(async ({ input }) => {
+        if (input.base64.length > 14_000_000) {
+          throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "حجم الصورة كبير جداً (الحد الأقصى 10MB)" });
+        }
+        const buffer = Buffer.from(input.base64, "base64");
+        const suffix = Math.random().toString(36).slice(2, 8);
+        const ext = input.fileName.split(".").pop() || "jpg";
+        const key = `product-images/${Date.now()}-${suffix}.${ext}`;
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        return { url, key };
+      }),
   }),
 
   // ─── Health Profile ───────────────────────────────────────────────────────
