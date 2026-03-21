@@ -1,0 +1,9 @@
+{
+  "query": "\nINSERT INTO products (name, image, link, diseaseId, price, description, featured, clicks)\nVALUES (\n  'بذور الشيا العضوية - Indus Organics | 2 رطل | خالٍ من الكبريتات',\n  'https://d2xsxph8kpxj0f.cloudfront.net/310519663329155856/GHTpfk4SpEdMpWpbzXoixY/indus-organics-chia-seeds_1cb6119f.jpg',\n  'https://amzn.to/3PQylEa',\n  60003,\n  '52 ريال',\n  'بذور الشيا العضوية من Indus Organics، معتمدة USDA Organic ومزروعة في بيئة متنوعة بيولوجياً في بيرو باستخدام أساليب زراعية مستدامة. خالية تماماً من الكبريتات والمواد الحافظة والسكر المضاف. غنية بأوميغا-3 التي تساعد على خفض ضغط الدم وتحسين صحة القلب، بالإضافة إلى الألياف والبروتين والمعادن والفيتامينات الضرورية. عبوة 2 رطل (907 غرام) مثالية للاستخدام اليومي.',\n  0,\n  0\n);\n\nUPDATE products SET price = '69 ريال' WHERE link = 'https://amzn.to/47hRg0N';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2CDbTqdqtw4FQjd.root --database GHTpfk4SpEdMpWpbzXoixY --execute \nINSERT INTO products (name, image, link, diseaseId, price, description, featured, clicks)\nVALUES (\n  'بذور الشيا العضوية - Indus Organics | 2 رطل | خالٍ من الكبريتات',\n  'https://d2xsxph8kpxj0f.cloudfront.net/310519663329155856/GHTpfk4SpEdMpWpbzXoixY/indus-organics-chia-seeds_1cb6119f.jpg',\n  'https://amzn.to/3PQylEa',\n  60003,\n  '52 ريال',\n  'بذور الشيا العضوية من Indus Organics، معتمدة USDA Organic ومزروعة في بيئة متنوعة بيولوجياً في بيرو باستخدام أساليب زراعية مستدامة. خالية تماماً من الكبريتات والمواد الحافظة والسكر المضاف. غنية بأوميغا-3 التي تساعد على خفض ضغط الدم وتحسين صحة القلب، بالإضافة إلى الألياف والبروتين والمعادن والفيتامينات الضرورية. عبوة 2 رطل (907 غرام) مثالية للاستخدام اليومي.',\n  0,\n  0\n);\n\nUPDATE products SET price = '69 ريال' WHERE link = 'https://amzn.to/47hRg0N';\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1833
+}
