@@ -36,6 +36,7 @@ export const products = mysqlTable("products", {
   link: text("link").notNull(),
   diseaseId: int("diseaseId").notNull(),
   price: varchar("price", { length: 100 }),
+  description: text("description"),
   clicks: int("clicks").default(0).notNull(),
   featured: int("featured").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

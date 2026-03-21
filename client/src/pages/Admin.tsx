@@ -51,9 +51,9 @@ function DiseaseForm({ initial, onSave, onCancel }: {
 
 // ─── Product Form ─────────────────────────────────────────────────────────────
 function ProductForm({ initial, diseases, onSave, onCancel }: {
-  initial?: { id?: number; name: string; image: string; link: string; diseaseId: number; price?: string | null; featured?: number };
+  initial?: { id?: number; name: string; image: string; link: string; diseaseId: number; price?: string | null; description?: string | null; featured?: number };
   diseases: { id: number; nameAr: string; icon?: string | null }[];
-  onSave: (data: { name: string; image: string; link: string; diseaseId: number; price?: string; featured?: number }) => void;
+  onSave: (data: { name: string; image: string; link: string; diseaseId: number; price?: string; description?: string; featured?: number }) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(initial?.name || "");
@@ -61,6 +61,7 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
   const [link, setLink] = useState(initial?.link || "");
   const [diseaseId, setDiseaseId] = useState(initial?.diseaseId || 0);
   const [price, setPrice] = useState(initial?.price || "");
+  const [description, setDescription] = useState(initial?.description || "");
   const [featured, setFeatured] = useState(initial?.featured || 0);
   const [imageMode, setImageMode] = useState<"url" | "upload">("url");
   const [isDragging, setIsDragging] = useState(false);
@@ -115,7 +116,7 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
     }
     try { new URL(image); } catch { toast.error("رابط الصورة غير صحيح"); return; }
     try { new URL(link); } catch { toast.error("رابط المنتج غير صحيح"); return; }
-    onSave({ name, image, link, diseaseId, price: price || undefined, featured });
+    onSave({ name, image, link, diseaseId, price: price || undefined, description: description || undefined, featured });
   };
 
   return (
@@ -254,6 +255,18 @@ function ProductForm({ initial, diseases, onSave, onCancel }: {
           {diseaseId === 0 && <p className="text-xs text-muted-foreground mt-1">يرجى اختيار تصنيف</p>}
         </div>
 
+        {/* Description */}
+        <div className="sm:col-span-2">
+          <label className="text-xs font-semibold text-muted-foreground mb-1 block">وصف المنتج (اختياري)</label>
+          <textarea
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="اكتب وصفاً دقيقاً للمنتج يوضح فوائده ومكوناته..."
+            rows={3}
+            className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+          />
+        </div>
+
         {/* Price & Featured */}
         <div>
           <label className="text-xs font-semibold text-muted-foreground mb-1 block">السعر (اختياري)</label>
@@ -306,7 +319,7 @@ export default function Admin() {
   const [showDiseaseForm, setShowDiseaseForm] = useState(false);
   const [editingDisease, setEditingDisease] = useState<{ id: number; name: string; nameAr: string } | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<{ id: number; name: string; image: string; link: string; diseaseId: number; price?: string | null; featured?: number } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<{ id: number; name: string; image: string; link: string; diseaseId: number; price?: string | null; description?: string | null; featured?: number } | null>(null);
 
   const { data: diseases, isLoading: diseasesLoading } = trpc.diseases.list.useQuery();
   const { data: products, isLoading: productsLoading } = trpc.products.adminList.useQuery(
@@ -673,7 +686,7 @@ export default function Admin() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <button
-                            onClick={() => setEditingProduct({ id: product.id, name: product.name, image: product.image, link: product.link, diseaseId: product.diseaseId, price: product.price, featured: product.featured })}
+                            onClick={() => setEditingProduct({ id: product.id, name: product.name, image: product.image, link: product.link, diseaseId: product.diseaseId, price: product.price, description: product.description, featured: product.featured })}
                             className="p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                           >
                             <Pencil size={15} />

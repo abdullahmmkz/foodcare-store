@@ -1,0 +1,8 @@
+{
+  "query": "\nINSERT INTO products (name, image, link, diseaseId, price, description, featured, clicks, createdAt)\nVALUES (\n  'بذور الشيا العضوية الخام - 4 رطل | نباتي وخالٍ من الغلوتين',\n  'https://d2xsxph8kpxj0f.cloudfront.net/310519663329155856/GHTpfk4SpEdMpWpbzXoixY/chia-seeds-organic_3958d0ca.jpg',\n  'https://amzn.to/47hRg0N',\n  60003,\n  '$18.99',\n  'بذور الشيا العضوية الخام من أفضل المصادر الطبيعية لأوميغا-3 التي تساعد على خفض ضغط الدم وتحسين صحة القلب والأوعية الدموية. غنية بالألياف والبروتين ومضادات الأكسدة. عبوة 4 رطل (1.81 كغ) عضوية 100%، غير معدلة وراثياً، خالية من المضافات والمواد الحافظة. مناسبة للنظام النباتي وخالية من الغلوتين.',\n  0,\n  0,\n  UNIX_TIMESTAMP() * 1000\n);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2CDbTqdqtw4FQjd.root --database GHTpfk4SpEdMpWpbzXoixY --execute \nINSERT INTO products (name, image, link, diseaseId, price, description, featured, clicks, createdAt)\nVALUES (\n  'بذور الشيا العضوية الخام - 4 رطل | نباتي وخالٍ من الغلوتين',\n  'https://d2xsxph8kpxj0f.cloudfront.net/310519663329155856/GHTpfk4SpEdMpWpbzXoixY/chia-seeds-organic_3958d0ca.jpg',\n  'https://amzn.to/47hRg0N',\n  60003,\n  '$18.99',\n  'بذور الشيا العضوية الخام من أفضل المصادر الطبيعية لأوميغا-3 التي تساعد على خفض ضغط الدم وتحسين صحة القلب والأوعية الدموية. غنية بالألياف والبروتين ومضادات الأكسدة. عبوة 4 رطل (1.81 كغ) عضوية 100%، غير معدلة وراثياً، خالية من المضافات والمواد الحافظة. مناسبة للنظام النباتي وخالية من الغلوتين.',\n  0,\n  0,\n  UNIX_TIMESTAMP() * 1000\n);\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'description' in 'field list'"
+  ]
+}

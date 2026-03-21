@@ -191,7 +191,7 @@ export const appRouter = router({
     create: adminProcedure
       .input(z.object({
         name: z.string().min(1), image: z.string().url(), link: z.string().url(),
-        diseaseId: z.number(), price: z.string().optional(), featured: z.number().optional(),
+        diseaseId: z.number(), price: z.string().optional(), description: z.string().optional(), featured: z.number().optional(),
       }))
       .mutation(async ({ input }) => { await createProduct({ ...input, clicks: 0 }); return { success: true }; }),
 
@@ -199,7 +199,7 @@ export const appRouter = router({
       .input(z.object({
         id: z.number(), name: z.string().optional(), image: z.string().url().optional(),
         link: z.string().url().optional(), diseaseId: z.number().optional(),
-        price: z.string().optional(), featured: z.number().optional(),
+        price: z.string().optional(), description: z.string().optional(), featured: z.number().optional(),
       }))
       .mutation(async ({ input }) => { const { id, ...data } = input; await updateProduct(id, data); return { success: true }; }),
 

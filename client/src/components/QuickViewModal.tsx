@@ -88,6 +88,13 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                 </div>
               )}
 
+              {/* Description */}
+              {product.description && (
+                <div className="text-sm text-muted-foreground leading-relaxed mb-5 bg-muted/50 rounded-xl p-4 border border-border/50">
+                  {product.description}
+                </div>
+              )}
+
               {/* Stats */}
               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
                 <span className="flex items-center gap-1">

@@ -36,6 +36,13 @@
       "when": 1772235108948,
       "tag": "0004_omniscient_payback",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1774120421762,
+      "tag": "0005_tricky_magma",
+      "breakpoints": true
     }
   ]
 }

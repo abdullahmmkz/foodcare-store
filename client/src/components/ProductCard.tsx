@@ -10,6 +10,7 @@ export interface ProductItem {
   link: string;
   diseaseId: number;
   price?: string | null;
+  description?: string | null;
   clicks: number;
   featured: number;
   diseaseName?: string | null;

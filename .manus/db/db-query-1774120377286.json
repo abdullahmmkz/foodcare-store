@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, name, nameAr FROM diseases;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2CDbTqdqtw4FQjd.root --database GHTpfk4SpEdMpWpbzXoixY --execute SELECT id, name, nameAr FROM diseases;",
+  "rows": [
+    {
+      "id": "60002",
+      "name": "diabetes",
+      "nameAr": "السكري"
+    },
+    {
+      "id": "60003",
+      "name": "High blood pressure",
+      "nameAr": "الضغط"
+    },
+    {
+      "id": "60004",
+      "name": "Obesity disease",
+      "nameAr": "السمنة"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tnameAr\n60002\tdiabetes\tالسكري\n60003\tHigh blood pressure\tالضغط\n60004\tObesity disease\tالسمنة\n",
+  "stderr": "",
+  "execution_time_ms": 1589
+}
