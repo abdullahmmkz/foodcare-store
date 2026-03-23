@@ -181,16 +181,16 @@ export default function Home() {
   return (
     <div className={`min-h-screen bg-background ${lang === "en" ? "font-sans" : ""}`} dir={lang === "en" ? "ltr" : "rtl"}>
       {/* ─── Sticky Header ─────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-border shadow-sm">
+      <header className="sticky top-0 z-40 backdrop-blur-md border-b border-border shadow-sm" style={{ backgroundColor: '#141413' }}>
         <div className="container">
           <div className="flex items-center gap-3 h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 shrink-0">
-              <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-sm">
-                <Leaf size={20} className="text-primary-foreground" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#d97757' }}>
+                <Leaf size={20} style={{ color: '#faf9f5' }} />
               </div>
-              <span className="font-black text-lg text-foreground hidden sm:block">
-                Nutritional <span className="text-primary">Care</span>
+              <span className="font-heading font-black text-lg hidden sm:block" style={{ color: '#faf9f5' }}>
+                Nutritional <span style={{ color: '#d97757' }}>Care</span>
               </span>
             </Link>
 
@@ -202,7 +202,8 @@ export default function Home() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={tx.search}
-                className={`w-full bg-muted border border-border rounded-xl py-2.5 ${lang === "en" ? "pl-9 pr-9" : "pr-9 pl-9"} text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all`}
+                className={`w-full rounded-xl py-2.5 ${lang === "en" ? "pl-9 pr-9" : "pr-9 pl-9"} text-sm focus:outline-none focus:ring-2 transition-all`}
+                style={{ backgroundColor: '#1e1e1c', border: '1px solid #333', color: '#faf9f5' }}
               />
               {search && (
                 <button
@@ -219,7 +220,8 @@ export default function Home() {
               {/* Language Toggle */}
               <button
                 onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-                className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary border border-border rounded-lg px-2 py-1.5 hover:bg-muted transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold rounded-lg px-2 py-1.5 transition-colors"
+                style={{ color: '#b0aea5', border: '1px solid #333' }}
                 title={lang === "ar" ? "Switch to English" : "التبديل للعربية"}
               >
                 <Globe size={13} />
@@ -230,7 +232,7 @@ export default function Home() {
                 <>
                   {user?.role === "admin" && (
                     <Link href="/admin">
-                      <button className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-3 py-2 rounded-xl hover:bg-primary/90 transition-colors">
+                      <button className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl transition-colors" style={{ backgroundColor: '#d97757', color: '#faf9f5' }}>
                         <Shield size={15} />
                         <span className="hidden sm:inline">{tx.admin}</span>
                       </button>
@@ -254,11 +256,11 @@ export default function Home() {
                 </>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Link href="/login" className="flex items-center gap-1.5 text-sm font-semibold text-foreground px-3 py-2 rounded-xl border border-border hover:bg-muted transition-colors">
+                  <Link href="/login" className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl transition-colors" style={{ color: '#faf9f5', border: '1px solid #333' }}>
                     <LogIn size={15} />
                     <span className="hidden sm:inline">{tx.login}</span>
                   </Link>
-                  <Link href="/register" className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-3 py-2 rounded-xl hover:bg-primary/90 transition-colors">
+                  <Link href="/register" className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl transition-colors" style={{ backgroundColor: '#d97757', color: '#faf9f5' }}>
                     <UserCircle size={15} />
                     <span className="hidden sm:inline">{tx.register}</span>
                   </Link>
@@ -270,20 +272,20 @@ export default function Home() {
       </header>
 
       {/* ─── Hero Banner ───────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-l from-primary/5 via-accent/30 to-primary/10 border-b border-border">
-        <div className="container py-8 text-center">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-3 py-1.5 rounded-full mb-3">
+      <div className="border-b border-border" style={{ background: 'linear-gradient(135deg, #141413 0%, #1e1e1c 50%, #141413 100%)' }}>
+        <div className="container py-10 text-center">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-3" style={{ backgroundColor: 'rgba(217,119,87,0.15)', color: '#d97757' }}>
             <ShoppingBag size={12} />
             {tx.badge}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground mb-2">
+          <h1 className="font-heading text-2xl sm:text-3xl font-black mb-2" style={{ color: '#faf9f5' }}>
             {tx.hero}
           </h1>
         </div>
       </div>
 
       {/* ─── Categories Bar ────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-border sticky top-16 z-30 shadow-sm">
+      <div className="border-b sticky top-16 z-30 shadow-sm" style={{ backgroundColor: '#faf9f5', borderColor: '#e8e6dc' }}>
         <div className="container py-3">
           <div className="flex items-center gap-2">
             <button
@@ -300,11 +302,10 @@ export default function Home() {
               {/* All */}
               <button
                 onClick={() => setSelectedDiseaseId(undefined)}
-                className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                  selectedDiseaseId === undefined
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                }`}
+                className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200`}
+                style={selectedDiseaseId === undefined
+                  ? { backgroundColor: '#141413', color: '#faf9f5' }
+                  : { backgroundColor: '#e8e6dc', color: '#b0aea5' }}
               >
                 {tx.all}
               </button>
@@ -313,11 +314,10 @@ export default function Home() {
                 <button
                   key={disease.id}
                   onClick={() => setSelectedDiseaseId(disease.id)}
-                  className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
-                    selectedDiseaseId === disease.id
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  }`}
+                  className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap`}
+                  style={selectedDiseaseId === disease.id
+                    ? { backgroundColor: '#141413', color: '#faf9f5' }
+                    : { backgroundColor: '#e8e6dc', color: '#b0aea5' }}
                 >
                   {lang === "en" && disease.name ? disease.name : disease.nameAr}
                 </button>
@@ -455,18 +455,18 @@ export default function Home() {
       )}
 
       {/* ─── Footer ────────────────────────────────────────────────────────── */}
-      <footer className="bg-white border-t border-border mt-12">
+      <footer className="mt-12" style={{ backgroundColor: '#141413', borderTop: '1px solid #2a2a28' }}>
         <div className="container py-10">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-8">
             {/* Brand */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center">
-                  <Leaf size={18} className="text-primary-foreground" />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#d97757' }}>
+                  <Leaf size={18} style={{ color: '#faf9f5' }} />
                 </div>
-                <span className="font-black text-foreground text-lg">Nutritional Care</span>
+                <span className="font-heading font-black text-lg" style={{ color: '#faf9f5' }}>Nutritional Care</span>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs leading-relaxed" style={{ color: '#b0aea5' }}>
                 {lang === "ar"
                   ? "منصة متخصصة في توصية المنتجات الصحية والمكملات الغذائية لمرضى السكري وضغط الدم والسمنة."
                   : "A platform specialized in recommending health products and nutritional supplements for diabetes, blood pressure, and obesity patients."}
@@ -475,17 +475,17 @@ export default function Home() {
 
             {/* Quick Links */}
             <div className="flex flex-col gap-3">
-              <h3 className="font-bold text-foreground text-sm">{lang === "ar" ? "روابط سريعة" : "Quick Links"}</h3>
+              <h3 className="font-heading font-bold text-sm" style={{ color: '#faf9f5' }}>{lang === "ar" ? "روابط سريعة" : "Quick Links"}</h3>
               <div className="flex flex-col gap-2">
-                <Link href="/" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                <Link href="/" className="text-xs transition-colors flex items-center gap-1.5" style={{ color: '#b0aea5' }}>
                   <ShoppingBag size={12} />
                   {lang === "ar" ? "المتجر" : "Store"}
                 </Link>
-                <Link href="/about" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                <Link href="/about" className="text-xs transition-colors flex items-center gap-1.5" style={{ color: '#b0aea5' }}>
                   <Info size={12} />
                   {tx.aboutUs}
                 </Link>
-                <Link href="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                <Link href="/privacy" className="text-xs transition-colors flex items-center gap-1.5" style={{ color: '#b0aea5' }}>
                   <FileText size={12} />
                   {tx.privacy}
                 </Link>
@@ -494,11 +494,12 @@ export default function Home() {
 
             {/* Contact */}
             <div className="flex flex-col gap-3">
-              <h3 className="font-bold text-foreground text-sm">{tx.contact}</h3>
+              <h3 className="font-heading font-bold text-sm" style={{ color: '#faf9f5' }}>{tx.contact}</h3>
               <div className="flex flex-col gap-2">
                 <a
                   href="mailto:info@nutritional-care.manus.space"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+                  className="text-xs transition-colors flex items-center gap-1.5"
+                  style={{ color: '#b0aea5' }}
                 >
                   <Mail size={12} />
                   info@nutritional-care.manus.space
@@ -506,13 +507,15 @@ export default function Home() {
                 <div className="flex items-center gap-2 mt-1">
                   <button
                     onClick={() => setLang("ar")}
-                    className={`text-xs px-2 py-1 rounded border transition-colors ${lang === "ar" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}
+                    className="text-xs px-2 py-1 rounded transition-colors"
+                    style={lang === "ar" ? { backgroundColor: '#d97757', color: '#faf9f5', border: '1px solid #d97757' } : { border: '1px solid #333', color: '#b0aea5' }}
                   >
                     العربية
                   </button>
                   <button
                     onClick={() => setLang("en")}
-                    className={`text-xs px-2 py-1 rounded border transition-colors ${lang === "en" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}
+                    className="text-xs px-2 py-1 rounded transition-colors"
+                    style={lang === "en" ? { backgroundColor: '#d97757', color: '#faf9f5', border: '1px solid #d97757' } : { border: '1px solid #333', color: '#b0aea5' }}
                   >
                     English
                   </button>
@@ -522,13 +525,13 @@ export default function Home() {
           </div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-border pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">
+          <div className="pt-5 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ borderTop: '1px solid #2a2a28' }}>
+            <p className="text-xs" style={{ color: '#b0aea5' }}>
               {lang === "ar"
                 ? `© ${new Date().getFullYear()} Nutritional Care. ${tx.allRights}.`
                 : `© ${new Date().getFullYear()} Nutritional Care. ${tx.allRights}.`}
             </p>
-            <p className="text-xs text-muted-foreground text-center">{tx.footerTagline}</p>
+            <p className="text-xs text-center" style={{ color: '#b0aea5' }}>{tx.footerTagline}</p>
           </div>
         </div>
       </footer>
